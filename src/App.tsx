@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { BottomTabBar } from "@/components/BottomTabBar";
+import { TopBar } from "@/components/TopBar";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
@@ -30,6 +31,7 @@ const AppContent = () => {
           path="/"
           element={
             <ProtectedRoute>
+              <TopBar />
               <Dashboard />
               <BottomTabBar />
             </ProtectedRoute>
@@ -39,6 +41,7 @@ const AppContent = () => {
           path="/notifications"
           element={
             <ProtectedRoute>
+              <TopBar />
               <Notifications />
               <BottomTabBar />
             </ProtectedRoute>
@@ -48,6 +51,7 @@ const AppContent = () => {
           path="/categories"
           element={
             <ProtectedRoute>
+              <TopBar />
               <Categories />
               <BottomTabBar />
             </ProtectedRoute>
@@ -57,6 +61,7 @@ const AppContent = () => {
           path="/budgets"
           element={
             <ProtectedRoute>
+              <TopBar />
               <Budgets />
               <BottomTabBar />
             </ProtectedRoute>
@@ -66,6 +71,7 @@ const AppContent = () => {
           path="/stats"
           element={
             <ProtectedRoute>
+              <TopBar />
               <Stats />
               <BottomTabBar />
             </ProtectedRoute>
@@ -75,8 +81,8 @@ const AppContent = () => {
           path="/history"
           element={
             <ProtectedRoute>
+              <TopBar />
               <History />
-              <BottomTabBar />
             </ProtectedRoute>
           }
         />
@@ -84,6 +90,7 @@ const AppContent = () => {
           path="/add-transaction"
           element={
             <ProtectedRoute>
+              <TopBar />
               <AddTransaction />
             </ProtectedRoute>
           }
@@ -92,8 +99,8 @@ const AppContent = () => {
           path="/settings"
           element={
             <ProtectedRoute>
+              <TopBar />
               <Settings />
-              <BottomTabBar />
             </ProtectedRoute>
           }
         />
@@ -101,6 +108,7 @@ const AppContent = () => {
           path="/help"
           element={
             <ProtectedRoute>
+              <TopBar />
               <Help />
             </ProtectedRoute>
           }

@@ -1,229 +1,203 @@
-import { useMemo } from "react";
-import { Link } from "react-router-dom";
-import { Plus, Minus, History, TrendingUp } from "lucide-react";
+import { ArrowUpCircle, ArrowDownCircle, TrendingUp, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
 import { useTransactionStore } from "@/store/transactionStore";
 import { useBudgetStore } from "@/store/budgetStore";
 import { useCategoryStore } from "@/store/categoryStore";
 import { useAuthStore } from "@/store/authStore";
-import { useSettingsStore } from "@/store/settingsStore";
+import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 
 const Dashboard = () => {
-  const user = useAuthStore((state) => state.user);
+  const navigate = useNavigate();
   const transactions = useTransactionStore((state) => state.transactions);
-  const budgets = useBudgetStore((state) => state.budgets);
+  const { budgets } = useBudgetStore();
   const categories = useCategoryStore((state) => state.categories);
-  const smartBarEnabled = useSettingsStore((state) => state.smartBarEnabled);
+  const user = useAuthStore((state) => state.user);
 
-  const monthlyStats = useMemo(() => {
-    const now = new Date();
-    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
-    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  const currentMonth = new Date().getMonth();
+  const currentYear = new Date().getFullYear();
 
-    const monthTransactions = transactions.filter((t) => {
-      const tDate = new Date(t.date);
-      return tDate >= firstDay && tDate <= lastDay;
-    });
+  const monthTransactions = transactions.filter((t) => {
+    const date = new Date(t.date);
+    return date.getMonth() === currentMonth && date.getFullYear() === currentYear;
+  });
 
-    const income = monthTransactions
-      .filter((t) => t.type === "income")
-      .reduce((sum, t) => sum + t.amount, 0);
+  const totalIncome = monthTransactions
+    .filter((t) => t.type === "income")
+    .reduce((sum, t) => sum + t.amount, 0);
 
-    const expenses = monthTransactions
-      .filter((t) => t.type === "expense")
-      .reduce((sum, t) => sum + t.amount, 0);
+  const totalExpenses = monthTransactions
+    .filter((t) => t.type === "expense")
+    .reduce((sum, t) => sum + t.amount, 0);
 
-    return { income, expenses, balance: income - expenses };
-  }, [transactions]);
+  const balance = totalIncome - totalExpenses;
+  const globalBudget = budgets.find((b) => !b.categoryId)?.amount || 0;
+  const remaining = globalBudget - totalExpenses;
+  const dailyAverage = globalBudget > 0 ? remaining / new Date(currentYear, currentMonth + 1, 0).getDate() : 0;
 
-  const dailyBudget = useMemo(() => {
-    const globalBudget = budgets.find((b) => !b.categoryId);
-    if (!globalBudget) return null;
+  const alertCategories = categories
+    .map((cat) => {
+      const budget = budgets.find((b) => b.categoryId === cat.id);
+      if (!budget) return null;
 
-    const daysInMonth = new Date(
-      new Date().getFullYear(),
-      new Date().getMonth() + 1,
-      0
-    ).getDate();
-    const dailyLimit = globalBudget.amount / daysInMonth;
-    const remainingBudget = globalBudget.amount - monthlyStats.expenses;
-    const daysRemaining = daysInMonth - new Date().getDate() + 1;
-    const smartDaily = remainingBudget / daysRemaining;
+      const spent = monthTransactions
+        .filter((t) => t.category === cat.name && t.type === "expense")
+        .reduce((sum, t) => sum + t.amount, 0);
 
-    return { dailyLimit, smartDaily, remainingBudget };
-  }, [budgets, monthlyStats]);
+      const percentage = (spent / budget.amount) * 100;
+      if (percentage >= 80) return { ...cat, percentage, spent, budget: budget.amount };
+      return null;
+    })
+    .filter(Boolean)
+    .slice(0, 3);
 
-  const categoryAlerts = useMemo(() => {
-    return budgets
-      .filter((b) => b.categoryId)
-      .map((budget) => {
-        const category = categories.find((c) => c.id === budget.categoryId);
-        const spent = transactions
-          .filter(
-            (t) =>
-              t.type === "expense" &&
-              t.category === category?.name &&
-              new Date(t.date).getMonth() === new Date().getMonth()
-          )
-          .reduce((sum, t) => sum + t.amount, 0);
+  const container = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+      },
+    },
+  };
 
-        const percentage = (spent / budget.amount) * 100;
-        return {
-          category: category?.name || "Inconnu",
-          icon: category?.icon || "📦",
-          spent,
-          budget: budget.amount,
-          percentage,
-          status:
-            percentage >= 100
-              ? "exceeded"
-              : percentage >= 80
-              ? "warning"
-              : "ok",
-        };
-      })
-      .filter((alert) => alert.status !== "ok")
-      .slice(0, 3);
-  }, [budgets, categories, transactions]);
+  const item = {
+    hidden: { y: 20, opacity: 0 },
+    show: { y: 0, opacity: 1 },
+  };
 
   return (
-    <div className="min-h-screen pb-24 safe-area-top">
-      <div className="p-6 space-y-6">
-        {/* Header */}
-        <div className="space-y-2">
-          <h1 className="text-2xl font-bold text-foreground">
-            Bonjour, {user?.username} 👋
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Voici votre situation financière
-          </p>
-        </div>
-
-        {/* Balance Card */}
-        <Card className="p-6 bg-gradient-to-br from-primary to-accent text-primary-foreground shadow-lg">
-          <div className="space-y-4">
-            <div>
-              <p className="text-sm opacity-90">Solde du mois</p>
-              <h2 className="text-4xl font-bold mt-1">
-                {monthlyStats.balance.toLocaleString()} {user?.currency}
-              </h2>
-            </div>
-
-            <div className="flex justify-between items-center pt-4 border-t border-primary-foreground/20">
-              <div>
-                <p className="text-xs opacity-90">Revenus</p>
-                <p className="text-lg font-semibold">
-                  +{monthlyStats.income.toLocaleString()}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs opacity-90">Dépenses</p>
-                <p className="text-lg font-semibold">
-                  -{monthlyStats.expenses.toLocaleString()}
-                </p>
-              </div>
-            </div>
-          </div>
-        </Card>
-
-        {/* Reste à vivre */}
-        {dailyBudget && (
-          <Card className="p-6 space-y-3">
-            <h3 className="font-semibold text-foreground">Reste à vivre</h3>
-            <div className="space-y-2">
-              <div className="flex justify-between items-baseline">
-                <span className="text-2xl font-bold text-primary">
-                  {dailyBudget.remainingBudget.toLocaleString()}
-                </span>
-                <span className="text-sm text-muted-foreground">
-                  {user?.currency}
-                </span>
-              </div>
-              {smartBarEnabled && (
-                <div className="bg-muted p-3 rounded-lg">
-                  <p className="text-xs text-muted-foreground mb-1">
-                    Barre intelligente du jour
-                  </p>
-                  <p className="text-lg font-semibold text-secondary">
-                    {dailyBudget.smartDaily.toFixed(0)} {user?.currency}/jour
-                  </p>
+    <div className="min-h-screen pb-24 pt-20 bg-gradient-to-br from-background via-primary/5 to-background">
+      <motion.div
+        variants={container}
+        initial="hidden"
+        animate="show"
+        className="p-6 space-y-6"
+      >
+        {/* Main Balance Card */}
+        <motion.div variants={item}>
+          <Card className="floating-card p-8 bg-gradient-to-br from-primary to-accent text-white border-0 overflow-hidden relative">
+            <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -mr-20 -mt-20"></div>
+            <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/10 rounded-full -ml-16 -mb-16"></div>
+            
+            <div className="relative z-10">
+              <p className="text-sm opacity-90 mb-2">Solde du mois</p>
+              <h1 className="text-4xl font-bold mb-4">
+                {balance.toLocaleString()} {user?.currency || "FCFA"}
+              </h1>
+              <div className="flex items-center gap-6 text-sm">
+                <div className="flex items-center gap-2">
+                  <ArrowUpCircle className="w-4 h-4" />
+                  <span>+{totalIncome.toLocaleString()}</span>
                 </div>
-              )}
+                <div className="flex items-center gap-2">
+                  <ArrowDownCircle className="w-4 h-4" />
+                  <span>-{totalExpenses.toLocaleString()}</span>
+                </div>
+              </div>
             </div>
           </Card>
-        )}
+        </motion.div>
+
+        {/* Remaining Budget & Daily Average */}
+        <div className="grid grid-cols-2 gap-4">
+          <motion.div variants={item}>
+            <Card className="floating-card p-5 bg-gradient-to-br from-card to-card/50 border-border/50">
+              <p className="text-xs text-muted-foreground mb-2">Reste à vivre</p>
+              <p className="text-2xl font-bold text-primary">
+                {remaining.toLocaleString()}
+              </p>
+            </Card>
+          </motion.div>
+
+          <motion.div variants={item}>
+            <Card className="floating-card p-5 bg-gradient-to-br from-card to-card/50 border-border/50">
+              <p className="text-xs text-muted-foreground mb-2">Par jour</p>
+              <p className="text-2xl font-bold text-secondary">
+                {dailyAverage.toFixed(0)}
+              </p>
+            </Card>
+          </motion.div>
+        </div>
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-3 gap-3">
-          <Link to="/add-transaction?type=income" className="block">
-            <Card className="p-4 text-center hover:shadow-md transition-shadow">
-              <div className="w-12 h-12 rounded-full bg-success/10 flex items-center justify-center mx-auto mb-2">
-                <Plus className="w-6 h-6 text-success" />
-              </div>
-              <p className="text-xs font-medium">Entrée</p>
-            </Card>
-          </Link>
-          <Link to="/add-transaction?type=expense" className="block">
-            <Card className="p-4 text-center hover:shadow-md transition-shadow">
-              <div className="w-12 h-12 rounded-full bg-danger/10 flex items-center justify-center mx-auto mb-2">
-                <Minus className="w-6 h-6 text-danger" />
-              </div>
-              <p className="text-xs font-medium">Dépense</p>
-            </Card>
-          </Link>
-          <Link to="/history" className="block">
-            <Card className="p-4 text-center hover:shadow-md transition-shadow">
-              <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mx-auto mb-2">
-                <History className="w-6 h-6 text-foreground" />
-              </div>
-              <p className="text-xs font-medium">Historique</p>
-            </Card>
-          </Link>
-        </div>
+        <motion.div variants={item}>
+          <div className="grid grid-cols-3 gap-3">
+            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+              <Button
+                onClick={() => navigate("/add-transaction")}
+                className="w-full h-20 flex flex-col gap-2 bg-gradient-to-br from-success to-success/80 hover:from-success/90 hover:to-success/70 text-white border-0 shadow-lg"
+              >
+                <ArrowUpCircle className="w-6 h-6" />
+                <span className="text-xs">Entrée</span>
+              </Button>
+            </motion.div>
+
+            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+              <Button
+                onClick={() => navigate("/add-transaction")}
+                className="w-full h-20 flex flex-col gap-2 bg-gradient-to-br from-danger to-danger/80 hover:from-danger/90 hover:to-danger/70 text-white border-0 shadow-lg"
+              >
+                <ArrowDownCircle className="w-6 h-6" />
+                <span className="text-xs">Dépense</span>
+              </Button>
+            </motion.div>
+
+            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+              <Button
+                onClick={() => navigate("/history")}
+                variant="outline"
+                className="w-full h-20 flex flex-col gap-2 glassmorphism border-border/50 hover:bg-accent/10"
+              >
+                <TrendingUp className="w-6 h-6" />
+                <span className="text-xs">Historique</span>
+              </Button>
+            </motion.div>
+          </div>
+        </motion.div>
 
         {/* Category Alerts */}
-        {categoryAlerts.length > 0 && (
-          <Card className="p-6 space-y-4">
-            <h3 className="font-semibold text-foreground flex items-center gap-2">
-              <TrendingUp className="w-5 h-5" />
-              Alertes budgétaires
-            </h3>
-            <div className="space-y-3">
-              {categoryAlerts.map((alert, idx) => (
-                <div key={idx} className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xl">{alert.icon}</span>
-                      <span className="text-sm font-medium">
-                        {alert.category}
-                      </span>
+        {alertCategories.length > 0 && (
+          <motion.div variants={item}>
+            <Card className="floating-card p-5 border-warning/30 bg-gradient-to-br from-warning/10 to-warning/5">
+              <div className="flex items-center gap-2 mb-4">
+                <AlertCircle className="w-5 h-5 text-warning" />
+                <h3 className="font-semibold text-foreground">Alertes budget</h3>
+              </div>
+              <div className="space-y-3">
+                {alertCategories.map((cat: any) => (
+                  <motion.div
+                    key={cat.id}
+                    whileHover={{ x: 4 }}
+                    className="flex items-center justify-between"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div
+                        className="w-10 h-10 rounded-full flex items-center justify-center text-lg"
+                        style={{ backgroundColor: `${cat.color}20` }}
+                      >
+                        {cat.icon}
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">{cat.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {cat.spent.toLocaleString()} / {cat.budget.toLocaleString()}
+                        </p>
+                      </div>
                     </div>
-                    <span
-                      className={`text-sm font-semibold ${
-                        alert.status === "exceeded"
-                          ? "text-danger"
-                          : "text-warning"
-                      }`}
-                    >
-                      {alert.percentage.toFixed(0)}%
-                    </span>
-                  </div>
-                  <Progress
-                    value={Math.min(alert.percentage, 100)}
-                    className="h-2"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    {alert.spent.toLocaleString()} / {alert.budget.toLocaleString()}{" "}
-                    {user?.currency}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </Card>
+                    <div className="text-right">
+                      <p className={`text-sm font-bold ${cat.percentage >= 100 ? "text-danger" : "text-warning"}`}>
+                        {cat.percentage.toFixed(0)}%
+                      </p>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </Card>
+          </motion.div>
         )}
-      </div>
+      </motion.div>
     </div>
   );
 };

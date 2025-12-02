@@ -1,10 +1,12 @@
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useAuthStore } from "@/store/authStore";
 import { toast } from "sonner";
+import { motion } from "framer-motion";
+import { Lock, User } from "lucide-react";
 import mondjaiLogo from "@/assets/mondjai-logo.png";
 
 const Login = () => {
@@ -14,58 +16,85 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-
+  const handleLogin = () => {
     if (!username || !password) {
       toast.error("Veuillez remplir tous les champs");
       return;
     }
 
-    // Mock login - in real app, validate against stored credentials
     login({
-      id: crypto.randomUUID(),
+      id: Math.random().toString(36).substr(2, 9),
       username,
-      isStudent: true,
+      isStudent: false,
       currency: "FCFA",
       rememberMe,
     });
 
-    toast.success("Connexion réussie!");
+    toast.success("Connexion réussie");
     navigate("/");
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-gradient-to-b from-background to-muted">
-      <div className="w-full max-w-md space-y-8 animate-fade-in">
-        <div className="text-center space-y-4">
-          <img
-            src={mondjaiLogo}
-            alt="MonDjai"
-            className="w-32 h-32 mx-auto mb-4"
-          />
-          <h1 className="text-3xl font-bold text-foreground">Bon retour !</h1>
-          <p className="text-muted-foreground">
-            Connectez-vous pour gérer votre budget
-          </p>
-        </div>
+    <div className="min-h-screen flex items-center justify-center p-6 bg-gradient-to-br from-primary/20 via-background to-accent/20">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="w-full max-w-md"
+      >
+        <div className="floating-card glassmorphism p-8 space-y-6">
+          {/* Logo */}
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ type: "spring", delay: 0.2 }}
+            className="text-center space-y-3"
+          >
+            <div className="w-20 h-20 mx-auto bg-gradient-to-br from-primary to-accent rounded-3xl shadow-lg flex items-center justify-center p-3">
+              <img src={mondjaiLogo} alt="MonDjai" className="w-full h-full object-contain" />
+            </div>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+              MonDjai
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              Gérez votre budget intelligemment
+            </p>
+          </motion.div>
 
-        <form onSubmit={handleLogin} className="space-y-6 mt-8">
-          <div className="space-y-4">
-            <Input
-              type="text"
-              placeholder="Nom d'utilisateur"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              className="input-field"
-            />
-            <Input
-              type="password"
-              placeholder="Mot de passe"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="input-field"
-            />
+          {/* Form */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3 }}
+            className="space-y-4"
+          >
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Nom d'utilisateur</label>
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                <Input
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder="Entrez votre nom"
+                  className="pl-10 input-field"
+                  onKeyDown={(e) => e.key === "Enter" && handleLogin()}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Mot de passe</label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                <Input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="pl-10 input-field"
+                  onKeyDown={(e) => e.key === "Enter" && handleLogin()}
+                />
+              </div>
+            </div>
 
             <div className="flex items-center space-x-2">
               <Checkbox
@@ -75,30 +104,30 @@ const Login = () => {
               />
               <label
                 htmlFor="remember"
-                className="text-sm text-muted-foreground cursor-pointer"
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
               >
                 Se souvenir de moi
               </label>
             </div>
-          </div>
 
-          <Button type="submit" className="w-full btn-primary">
-            Se connecter
-          </Button>
-        </form>
+            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+              <Button onClick={handleLogin} className="w-full btn-primary h-12 text-base shadow-lg">
+                Se connecter
+              </Button>
+            </motion.div>
+          </motion.div>
 
-        <div className="text-center mt-6">
-          <p className="text-sm text-muted-foreground">
-            Pas encore de compte?{" "}
-            <Link
-              to="/register"
-              className="text-primary font-semibold hover:underline"
+          {/* Footer */}
+          <div className="text-center">
+            <button
+              onClick={() => navigate("/register")}
+              className="text-sm text-primary hover:underline font-medium"
             >
               Créer un compte
-            </Link>
-          </p>
+            </button>
+          </div>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 };
