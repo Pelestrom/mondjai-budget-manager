@@ -1,20 +1,18 @@
 import { NavLink } from "@/components/NavLink";
-import { Home, Bell, Grid3x3, TrendingUp, Settings } from "lucide-react";
-import { useNotificationStore } from "@/store/notificationStore";
+import { Home, Grid3x3, TrendingUp, Wallet, Plus } from "lucide-react";
+import { motion } from "framer-motion";
 
 export const BottomTabBar = () => {
-  const unreadCount = useNotificationStore((state) => state.getUnreadCount());
-
   const tabs = [
     { path: "/", icon: Home, label: "Accueil" },
-    { path: "/notifications", icon: Bell, label: "Alertes", badge: unreadCount },
     { path: "/categories", icon: Grid3x3, label: "Catégories" },
+    { path: "/add-transaction", icon: Plus, label: "Ajouter", isSpecial: true },
+    { path: "/budgets", icon: Wallet, label: "Budgets" },
     { path: "/stats", icon: TrendingUp, label: "Stats" },
-    { path: "/settings", icon: Settings, label: "Réglages" },
   ];
 
   return (
-    <nav className="tab-bar-mobile">
+    <nav className="tab-bar-mobile glassmorphism">
       <div className="flex items-center justify-around h-full px-2">
         {tabs.map((tab) => (
           <NavLink
@@ -26,25 +24,36 @@ export const BottomTabBar = () => {
           >
             {({ isActive }: { isActive: boolean }) => (
               <>
-                <div className="relative">
-                  <tab.icon
-                    className={`w-5 h-5 transition-all duration-200 ${
-                      isActive ? "scale-110" : "group-hover:scale-105"
+                {tab.isSpecial ? (
+                  <motion.div
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    className="absolute -top-6 w-14 h-14 rounded-full bg-gradient-to-br from-primary to-accent shadow-lg flex items-center justify-center"
+                  >
+                    <tab.icon className="w-6 h-6 text-white" />
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="relative"
+                  >
+                    <tab.icon
+                      className={`w-5 h-5 transition-all duration-200 ${
+                        isActive ? "scale-110" : ""
+                      }`}
+                    />
+                  </motion.div>
+                )}
+                {!tab.isSpecial && (
+                  <span
+                    className={`text-[10px] mt-1 transition-all duration-200 ${
+                      isActive ? "font-semibold" : "text-muted-foreground"
                     }`}
-                  />
-                  {tab.badge && tab.badge > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-danger text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
-                      {tab.badge > 9 ? "9+" : tab.badge}
-                    </span>
-                  )}
-                </div>
-                <span
-                  className={`text-[10px] mt-1 transition-all duration-200 ${
-                    isActive ? "font-semibold" : "text-muted-foreground"
-                  }`}
-                >
-                  {tab.label}
-                </span>
+                  >
+                    {tab.label}
+                  </span>
+                )}
               </>
             )}
           </NavLink>

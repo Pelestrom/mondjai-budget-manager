@@ -1,11 +1,14 @@
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { useAuthStore } from "@/store/authStore";
 import { useCategoryStore } from "@/store/categoryStore";
 import { toast } from "sonner";
+import { motion } from "framer-motion";
+import { User, Lock, GraduationCap } from "lucide-react";
 import mondjaiLogo from "@/assets/mondjai-logo.png";
 
 const Register = () => {
@@ -14,86 +17,93 @@ const Register = () => {
   const initializeCategories = useCategoryStore((state) => state.initializeDefaultCategories);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [isStudent, setIsStudent] = useState<string>("yes");
+  const [isStudent, setIsStudent] = useState(false);
   const [currency, setCurrency] = useState("FCFA");
 
-  const currencies = ["FCFA", "€", "$", "GBP", "Yen", "Pesos", "Rand", "Naira", "Autre"];
+  const currencies = ["FCFA", "€", "$", "GBP", "¥", "Pesos", "Rand", "Naira"];
 
-  const handleRegister = (e: React.FormEvent) => {
-    e.preventDefault();
-
+  const handleRegister = () => {
     if (!username || !password) {
       toast.error("Veuillez remplir tous les champs");
       return;
     }
 
-    // Initialize default categories
     initializeCategories();
 
-    // Create user
     login({
-      id: crypto.randomUUID(),
+      id: Math.random().toString(36).substr(2, 9),
       username,
-      isStudent: isStudent === "yes",
+      isStudent,
       currency,
-      rememberMe: false,
+      rememberMe: true,
     });
 
-    toast.success("Compte créé avec succès!");
+    toast.success("Compte créé avec succès");
     navigate("/");
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-gradient-to-b from-background to-muted">
-      <div className="w-full max-w-md space-y-8 animate-fade-in">
-        <div className="text-center space-y-4">
-          <img
-            src={mondjaiLogo}
-            alt="MonDjai"
-            className="w-32 h-32 mx-auto mb-4"
-          />
-          <h1 className="text-3xl font-bold text-foreground">Bienvenue !</h1>
-          <p className="text-muted-foreground">
-            Créez votre compte pour commencer
-          </p>
-        </div>
+    <div className="min-h-screen flex items-center justify-center p-6 bg-gradient-to-br from-accent/20 via-background to-primary/20">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="w-full max-w-md"
+      >
+        <div className="floating-card glassmorphism p-8 space-y-6">
+          {/* Logo */}
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ type: "spring", delay: 0.2 }}
+            className="text-center space-y-3"
+          >
+            <div className="w-20 h-20 mx-auto bg-gradient-to-br from-primary to-accent rounded-3xl shadow-lg flex items-center justify-center p-3">
+              <img src={mondjaiLogo} alt="MonDjai" className="w-full h-full object-contain" />
+            </div>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+              Créer un compte
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              Commencez à gérer votre budget
+            </p>
+          </motion.div>
 
-        <form onSubmit={handleRegister} className="space-y-6 mt-8">
-          <div className="space-y-4">
-            <Input
-              type="text"
-              placeholder="Nom d'utilisateur"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              className="input-field"
-            />
-            <Input
-              type="password"
-              placeholder="Mot de passe"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="input-field"
-            />
-
+          {/* Form */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3 }}
+            className="space-y-4"
+          >
             <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">
-                Êtes-vous étudiant ?
-              </label>
-              <Select value={isStudent} onValueChange={setIsStudent}>
-                <SelectTrigger className="input-field">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="yes">Oui</SelectItem>
-                  <SelectItem value="no">Non</SelectItem>
-                </SelectContent>
-              </Select>
+              <label className="text-sm font-medium">Nom d'utilisateur</label>
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                <Input
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder="Choisissez un nom"
+                  className="pl-10 input-field"
+                />
+              </div>
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">
-                Devise
-              </label>
+              <label className="text-sm font-medium">Mot de passe</label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                <Input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="pl-10 input-field"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Devise</label>
               <Select value={currency} onValueChange={setCurrency}>
                 <SelectTrigger className="input-field">
                   <SelectValue />
@@ -107,25 +117,41 @@ const Register = () => {
                 </SelectContent>
               </Select>
             </div>
-          </div>
 
-          <Button type="submit" className="w-full btn-primary">
-            S'inscrire
-          </Button>
-        </form>
-
-        <div className="text-center mt-6">
-          <p className="text-sm text-muted-foreground">
-            Déjà un compte?{" "}
-            <Link
-              to="/login"
-              className="text-primary font-semibold hover:underline"
+            <motion.div
+              whileHover={{ scale: 1.02 }}
+              className="floating-card p-4 flex items-center justify-between border-border/50"
             >
-              Se connecter
-            </Link>
-          </p>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                  <GraduationCap className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Statut étudiant</p>
+                  <p className="text-xs text-muted-foreground">Activer les fonctionnalités étudiantes</p>
+                </div>
+              </div>
+              <Switch checked={isStudent} onCheckedChange={setIsStudent} />
+            </motion.div>
+
+            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+              <Button onClick={handleRegister} className="w-full btn-primary h-12 text-base shadow-lg">
+                S'inscrire
+              </Button>
+            </motion.div>
+          </motion.div>
+
+          {/* Footer */}
+          <div className="text-center">
+            <button
+              onClick={() => navigate("/login")}
+              className="text-sm text-primary hover:underline font-medium"
+            >
+              Déjà un compte ? Se connecter
+            </button>
+          </div>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 };
