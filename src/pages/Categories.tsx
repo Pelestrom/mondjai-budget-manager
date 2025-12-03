@@ -29,13 +29,20 @@ const iconMap = {
 };
 
 const Categories = () => {
-  const { categories, addCategory, updateCategory, deleteCategory } = useCategoryStore();
+  const { categories, addCategory, updateCategory, deleteCategory, initializeDefaultCategories } = useCategoryStore();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [formData, setFormData] = useState({
     name: "",
     icon: "ShoppingBag",
     color: "#00A86B",
+  });
+
+  // Initialize default categories if empty
+  useState(() => {
+    if (categories.length === 0) {
+      initializeDefaultCategories();
+    }
   });
 
   const defaultIcons = [

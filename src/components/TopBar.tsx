@@ -36,12 +36,11 @@ export const TopBar = () => {
       <div className="flex items-center justify-between px-4 py-3">
         {/* Logo */}
         <motion.div
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          className="flex items-center gap-2"
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          className="flex items-center"
         >
-          <img src={mondjaiLogo} alt="MonDjai" className="h-8 w-8" />
-          <span className="font-bold text-lg text-primary">MonDjai</span>
+          <img src={mondjaiLogo} alt="MonDjai" className="h-9" />
         </motion.div>
 
         {/* Right side: Notifications & Account */}
