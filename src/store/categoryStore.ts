@@ -18,23 +18,18 @@ interface CategoryState {
 }
 
 const defaultCategories: Omit<Category, 'id'>[] = [
-  { name: 'Nourriture', icon: '🍔', color: '#FF6B6B' },
-  { name: 'Transport', icon: '🚗', color: '#4ECDC4' },
-  { name: 'Logement', icon: '🏠', color: '#45B7D1' },
-  { name: 'Internet', icon: '📶', color: '#96CEB4' },
-  { name: 'Sorties', icon: '🎉', color: '#FFEAA7' },
-  { name: 'Travail', icon: '💼', color: '#DFE6E9' },
-  { name: 'Cadeau', icon: '🎁', color: '#FD79A8' },
-  { name: 'Santé', icon: '🏥', color: '#74B9FF' },
-  { name: 'Médicaments', icon: '💊', color: '#A29BFE' },
-  { name: 'Études', icon: '🎓', color: '#00B894' },
+  { name: 'Nourriture', icon: 'UtensilsCrossed', color: '#FF6B6B' },
+  { name: 'Transport', icon: 'Car', color: '#4ECDC4' },
+  { name: 'Logement', icon: 'Home', color: '#45B7D1' },
+  { name: 'Internet', icon: 'Wifi', color: '#96CEB4' },
+  { name: 'Santé', icon: 'Heart', color: '#74B9FF' },
+  { name: 'Études', icon: 'GraduationCap', color: '#00B894' },
   {
     name: 'Urgences',
-    icon: '🌧',
+    icon: 'AlertTriangle',
     color: '#FF7675',
     subcategories: ['Maladie', 'Réparations'],
   },
-  { name: 'Autre', icon: '➕', color: '#B2BEC3' },
 ];
 
 export const useCategoryStore = create<CategoryState>()(

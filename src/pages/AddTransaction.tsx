@@ -1,14 +1,21 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useTransactionStore } from "@/store/transactionStore";
 import { useCategoryStore } from "@/store/categoryStore";
 import { toast } from "sonner";
+import { motion } from "framer-motion";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
+import { cn } from "@/lib/utils";
+import * as LucideIcons from "lucide-react";
 
 const AddTransaction = () => {
   const navigate = useNavigate();
@@ -22,11 +29,19 @@ const AddTransaction = () => {
     category: "",
     subcategory: "",
     note: "",
-    date: new Date().toISOString().split("T")[0],
+    date: new Date(),
     isFixed: false,
   });
 
   const selectedCategory = categories.find((c) => c.name === formData.category);
+
+  const getCategoryIcon = (iconName: string) => {
+    if (iconName && (LucideIcons as any)[iconName]) {
+      const IconComponent = (LucideIcons as any)[iconName];
+      return <IconComponent className="w-4 h-4" />;
+    }
+    return <LucideIcons.Package className="w-4 h-4" />;
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,7 +62,7 @@ const AddTransaction = () => {
       category: formData.category,
       subcategory: formData.subcategory || undefined,
       note: formData.note || undefined,
-      date: new Date(formData.date).toISOString(),
+      date: formData.date.toISOString(),
       isFixed: formData.isFixed,
     });
 
@@ -56,30 +71,28 @@ const AddTransaction = () => {
   };
 
   return (
-    <div className="min-h-screen pb-24 safe-area-top">
+    <div className="min-h-screen pb-8 pt-20">
       <div className="p-6 space-y-6">
-        <div className="flex items-center gap-3">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate(-1)}
-            className="rounded-full"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">
-              Nouvelle transaction
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              Enregistrez vos revenus et dépenses
-            </p>
-          </div>
-        </div>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <h1 className="text-2xl font-bold text-foreground">
+            Nouvelle transaction
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Enregistrez vos revenus et dépenses
+          </p>
+        </motion.div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Amount */}
-          <div className="space-y-2">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="space-y-2"
+          >
             <label className="text-sm font-medium">Montant</label>
             <Input
               type="number"
@@ -89,22 +102,28 @@ const AddTransaction = () => {
                 setFormData({ ...formData, amount: e.target.value })
               }
               placeholder="0"
-              className="input-field text-2xl font-bold"
+              className="text-2xl font-bold h-14"
               autoFocus
             />
-          </div>
+          </motion.div>
 
           {/* Type */}
-          <div className="space-y-2">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="space-y-2"
+          >
             <label className="text-sm font-medium">Type</label>
             <div className="grid grid-cols-2 gap-3">
               <Button
                 type="button"
                 variant={formData.type === "income" ? "default" : "outline"}
                 onClick={() => setFormData({ ...formData, type: "income" })}
-                className={
-                  formData.type === "income" ? "bg-success hover:bg-success/90" : ""
-                }
+                className={cn(
+                  "h-12",
+                  formData.type === "income" && "bg-success hover:bg-success/90"
+                )}
               >
                 Entrée
               </Button>
@@ -112,17 +131,23 @@ const AddTransaction = () => {
                 type="button"
                 variant={formData.type === "expense" ? "default" : "outline"}
                 onClick={() => setFormData({ ...formData, type: "expense" })}
-                className={
-                  formData.type === "expense" ? "bg-danger hover:bg-danger/90" : ""
-                }
+                className={cn(
+                  "h-12",
+                  formData.type === "expense" && "bg-danger hover:bg-danger/90"
+                )}
               >
                 Dépense
               </Button>
             </div>
-          </div>
+          </motion.div>
 
           {/* Category */}
-          <div className="space-y-2">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="space-y-2"
+          >
             <label className="text-sm font-medium">Catégorie</label>
             <Select
               value={formData.category}
@@ -130,23 +155,30 @@ const AddTransaction = () => {
                 setFormData({ ...formData, category: value, subcategory: "" })
               }
             >
-              <SelectTrigger className="input-field">
+              <SelectTrigger className="h-12">
                 <SelectValue placeholder="Sélectionner une catégorie" />
               </SelectTrigger>
               <SelectContent>
                 {categories.map((cat) => (
                   <SelectItem key={cat.id} value={cat.name}>
-                    {cat.icon} {cat.name}
+                    <span className="flex items-center gap-2">
+                      {getCategoryIcon(cat.icon)}
+                      {cat.name}
+                    </span>
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
-          </div>
+          </motion.div>
 
           {/* Subcategory */}
           {selectedCategory?.subcategories &&
             selectedCategory.subcategories.length > 0 && (
-              <div className="space-y-2">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="space-y-2"
+              >
                 <label className="text-sm font-medium">Sous-catégorie</label>
                 <Select
                   value={formData.subcategory}
@@ -154,7 +186,7 @@ const AddTransaction = () => {
                     setFormData({ ...formData, subcategory: value })
                   }
                 >
-                  <SelectTrigger className="input-field">
+                  <SelectTrigger className="h-12">
                     <SelectValue placeholder="Optionnel" />
                   </SelectTrigger>
                   <SelectContent>
@@ -165,35 +197,60 @@ const AddTransaction = () => {
                     ))}
                   </SelectContent>
                 </Select>
-              </div>
+              </motion.div>
             )}
 
           {/* Note */}
-          <div className="space-y-2">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="space-y-2"
+          >
             <label className="text-sm font-medium">Note (optionnel)</label>
             <Textarea
               value={formData.note}
               onChange={(e) => setFormData({ ...formData, note: e.target.value })}
               placeholder="Ajouter une description..."
-              className="input-field"
               rows={3}
             />
-          </div>
+          </motion.div>
 
           {/* Date */}
-          <div className="space-y-2">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+            className="space-y-2"
+          >
             <label className="text-sm font-medium">Date</label>
-            <Input
-              type="date"
-              value={formData.date}
-              onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-              className="input-field"
-            />
-          </div>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="w-full h-12 justify-start">
+                  <Calendar className="w-4 h-4 mr-2" />
+                  {format(formData.date, "PPP", { locale: fr })}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <CalendarComponent
+                  mode="single"
+                  selected={formData.date}
+                  onSelect={(date) => date && setFormData({ ...formData, date })}
+                  locale={fr}
+                  className={cn("p-3 pointer-events-auto")}
+                />
+              </PopoverContent>
+            </Popover>
+          </motion.div>
 
           {/* Fixed Expense */}
           {formData.type === "expense" && (
-            <div className="flex items-center space-x-2">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6 }}
+              className="flex items-center space-x-2"
+            >
               <Checkbox
                 id="fixed"
                 checked={formData.isFixed}
@@ -207,12 +264,18 @@ const AddTransaction = () => {
               >
                 Dépense fixe (récurrente)
               </label>
-            </div>
+            </motion.div>
           )}
 
-          <Button type="submit" className="w-full btn-primary">
-            Enregistrer la transaction
-          </Button>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.7 }}
+          >
+            <Button type="submit" className="w-full h-12 btn-primary">
+              Enregistrer la transaction
+            </Button>
+          </motion.div>
         </form>
       </div>
     </div>
