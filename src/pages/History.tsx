@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Search, Edit, Trash2, Copy, Calendar } from "lucide-react";
+import { Search, Calendar, ArrowLeft } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -10,14 +10,15 @@ import { useCategoryStore } from "@/store/categoryStore";
 import { useAuthStore } from "@/store/authStore";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { useNavigate } from "react-router-dom";
 import * as LucideIcons from "lucide-react";
 
 const History = () => {
+  const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
-  const { transactions, deleteTransaction } = useTransactionStore();
+  const { transactions } = useTransactionStore();
   const categories = useCategoryStore((state) => state.categories);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterType, setFilterType] = useState<"all" | "income" | "expense">("all");
@@ -41,13 +42,6 @@ const History = () => {
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }, [transactions, searchQuery, filterType, dateRange]);
 
-  const handleDelete = (id: string) => {
-    if (confirm("Êtes-vous sûr de vouloir supprimer cette transaction?")) {
-      deleteTransaction(id);
-      toast.success("Transaction supprimée");
-    }
-  };
-
   const getCategoryIcon = (categoryName: string) => {
     const category = categories.find((c) => c.name === categoryName);
     if (category?.icon && (LucideIcons as any)[category.icon]) {
@@ -63,11 +57,22 @@ const History = () => {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
+          className="flex items-center gap-4"
         >
-          <h1 className="text-2xl font-bold text-foreground">Historique</h1>
-          <p className="text-sm text-muted-foreground">
-            {filteredTransactions.length} transactions
-          </p>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate(-1)}
+            className="shrink-0"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">Historique</h1>
+            <p className="text-sm text-muted-foreground">
+              {filteredTransactions.length} transactions
+            </p>
+          </div>
         </motion.div>
 
         {/* Search & Filter */}
@@ -232,26 +237,6 @@ const History = () => {
                         {user?.currency}
                       </p>
                     </div>
-                  </div>
-
-                  <div className="flex gap-2 mt-3 pt-3 border-t border-border/50">
-                    <Button variant="ghost" size="sm" className="text-xs flex-1">
-                      <Edit className="w-3 h-3 mr-1" />
-                      Modifier
-                    </Button>
-                    <Button variant="ghost" size="sm" className="text-xs flex-1">
-                      <Copy className="w-3 h-3 mr-1" />
-                      Dupliquer
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDelete(transaction.id)}
-                      className="text-xs flex-1 text-danger"
-                    >
-                      <Trash2 className="w-3 h-3 mr-1" />
-                      Supprimer
-                    </Button>
                   </div>
                 </Card>
               </motion.div>

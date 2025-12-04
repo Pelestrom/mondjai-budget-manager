@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { User, Lock, Settings as SettingsIcon, HelpCircle, LogOut, Download, Upload, Search } from "lucide-react";
+import { User, Lock, Settings as SettingsIcon, HelpCircle, LogOut, Download, Upload, Search, ArrowLeft } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -61,11 +61,22 @@ const Settings = () => {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
+          className="flex items-center gap-4"
         >
-          <h1 className="text-2xl font-bold text-foreground">Réglages</h1>
-          <p className="text-sm text-muted-foreground">
-            Personnalisez votre expérience
-          </p>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate(-1)}
+            className="shrink-0"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">Réglages</h1>
+            <p className="text-sm text-muted-foreground">
+              Personnalisez votre expérience
+            </p>
+          </div>
         </motion.div>
 
         {/* Profile Section */}

@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { User, Lock, GraduationCap } from "lucide-react";
 import mondjaiLogo from "@/assets/mondjai-logo.png";
+import { currencies } from "@/lib/currencies";
 
 const Register = () => {
   const navigate = useNavigate();
@@ -19,8 +20,6 @@ const Register = () => {
   const [password, setPassword] = useState("");
   const [isStudent, setIsStudent] = useState(false);
   const [currency, setCurrency] = useState("FCFA");
-
-  const currencies = ["FCFA", "€", "$", "GBP", "¥", "Pesos", "Rand", "Naira"];
 
   const handleRegister = () => {
     if (!username || !password) {
@@ -57,12 +56,7 @@ const Register = () => {
             transition={{ type: "spring", delay: 0.2 }}
             className="text-center space-y-3"
           >
-            <div className="w-20 h-20 mx-auto bg-gradient-to-br from-primary to-accent rounded-3xl shadow-lg flex items-center justify-center p-3">
-              <img src={mondjaiLogo} alt="MonDjai" className="w-full h-full object-contain" />
-            </div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              Créer un compte
-            </h1>
+            <img src={mondjaiLogo} alt="MonDjai" className="h-24 mx-auto" />
             <p className="text-sm text-muted-foreground">
               Commencez à gérer votre budget
             </p>
@@ -105,13 +99,17 @@ const Register = () => {
             <div className="space-y-2">
               <label className="text-sm font-medium">Devise</label>
               <Select value={currency} onValueChange={setCurrency}>
-                <SelectTrigger className="input-field">
+                <SelectTrigger className="input-field h-12">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="max-h-[300px]">
                   {currencies.map((curr) => (
-                    <SelectItem key={curr} value={curr}>
-                      {curr}
+                    <SelectItem key={curr.code} value={curr.symbol}>
+                      <span className="flex items-center gap-3">
+                        <span className="text-xl">{curr.flag}</span>
+                        <span>{curr.symbol}</span>
+                        <span className="text-muted-foreground text-sm">- {curr.name}</span>
+                      </span>
                     </SelectItem>
                   ))}
                 </SelectContent>

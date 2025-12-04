@@ -49,12 +49,7 @@ const Login = () => {
             transition={{ type: "spring", delay: 0.2 }}
             className="text-center space-y-3"
           >
-            <div className="w-20 h-20 mx-auto bg-gradient-to-br from-primary to-accent rounded-3xl shadow-lg flex items-center justify-center p-3">
-              <img src={mondjaiLogo} alt="MonDjai" className="w-full h-full object-contain" />
-            </div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              MonDjai
-            </h1>
+            <img src={mondjaiLogo} alt="MonDjai" className="h-24 mx-auto" />
             <p className="text-sm text-muted-foreground">
               Gérez votre budget intelligemment
             </p>

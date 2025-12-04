@@ -1,9 +1,8 @@
-import { ArrowUpCircle, ArrowDownCircle, TrendingUp, AlertCircle } from "lucide-react";
+import { ArrowUpCircle, ArrowDownCircle, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useTransactionStore } from "@/store/transactionStore";
 import { useBudgetStore } from "@/store/budgetStore";
-import { useCategoryStore } from "@/store/categoryStore";
 import { useAuthStore } from "@/store/authStore";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -12,7 +11,6 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const transactions = useTransactionStore((state) => state.transactions);
   const { budgets } = useBudgetStore();
-  const categories = useCategoryStore((state) => state.categories);
   const user = useAuthStore((state) => state.user);
 
   const currentMonth = new Date().getMonth();
@@ -32,25 +30,15 @@ const Dashboard = () => {
     .reduce((sum, t) => sum + t.amount, 0);
 
   const balance = totalIncome - totalExpenses;
-  const globalBudget = budgets.find((b) => !b.categoryId)?.amount || 0;
-  const remaining = globalBudget - totalExpenses;
-  const dailyAverage = globalBudget > 0 ? remaining / new Date(currentYear, currentMonth + 1, 0).getDate() : 0;
-
-  const alertCategories = categories
-    .map((cat) => {
-      const budget = budgets.find((b) => b.categoryId === cat.id);
-      if (!budget) return null;
-
-      const spent = monthTransactions
-        .filter((t) => t.category === cat.name && t.type === "expense")
-        .reduce((sum, t) => sum + t.amount, 0);
-
-      const percentage = (spent / budget.amount) * 100;
-      if (percentage >= 80) return { ...cat, percentage, spent, budget: budget.amount };
-      return null;
-    })
-    .filter(Boolean)
-    .slice(0, 3);
+  const globalBudget = budgets.find((b) => !b.categoryId);
+  const globalBudgetAmount = globalBudget?.amount || 0;
+  const remaining = globalBudgetAmount - totalExpenses;
+  
+  // Calculate daily amount from smart bar logic
+  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+  const today = new Date().getDate();
+  const remainingDays = daysInMonth - today + 1;
+  const dailyAmount = globalBudgetAmount > 0 ? Math.max(0, remaining / remainingDays) : null;
 
   const container = {
     hidden: { opacity: 0 },
@@ -106,7 +94,7 @@ const Dashboard = () => {
             <Card className="floating-card p-5 bg-gradient-to-br from-card to-card/50 border-border/50">
               <p className="text-xs text-muted-foreground mb-2">Reste à vivre</p>
               <p className="text-2xl font-bold text-primary">
-                {remaining.toLocaleString()}
+                {globalBudgetAmount > 0 ? remaining.toLocaleString() : "—"}
               </p>
             </Card>
           </motion.div>
@@ -115,7 +103,7 @@ const Dashboard = () => {
             <Card className="floating-card p-5 bg-gradient-to-br from-card to-card/50 border-border/50">
               <p className="text-xs text-muted-foreground mb-2">Par jour</p>
               <p className="text-2xl font-bold text-secondary">
-                {dailyAverage.toFixed(0)}
+                {dailyAmount !== null ? dailyAmount.toFixed(0) : "Pas de budget"}
               </p>
             </Card>
           </motion.div>
@@ -126,7 +114,7 @@ const Dashboard = () => {
           <div className="grid grid-cols-3 gap-3">
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
               <Button
-                onClick={() => navigate("/add-transaction")}
+                onClick={() => navigate("/add-transaction?type=income")}
                 className="w-full h-20 flex flex-col gap-2 bg-gradient-to-br from-success to-success/80 hover:from-success/90 hover:to-success/70 text-white border-0 shadow-lg"
               >
                 <ArrowUpCircle className="w-6 h-6" />
@@ -136,7 +124,7 @@ const Dashboard = () => {
 
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
               <Button
-                onClick={() => navigate("/add-transaction")}
+                onClick={() => navigate("/add-transaction?type=expense")}
                 className="w-full h-20 flex flex-col gap-2 bg-gradient-to-br from-danger to-danger/80 hover:from-danger/90 hover:to-danger/70 text-white border-0 shadow-lg"
               >
                 <ArrowDownCircle className="w-6 h-6" />
@@ -156,47 +144,6 @@ const Dashboard = () => {
             </motion.div>
           </div>
         </motion.div>
-
-        {/* Category Alerts */}
-        {alertCategories.length > 0 && (
-          <motion.div variants={item}>
-            <Card className="floating-card p-5 border-warning/30 bg-gradient-to-br from-warning/10 to-warning/5">
-              <div className="flex items-center gap-2 mb-4">
-                <AlertCircle className="w-5 h-5 text-warning" />
-                <h3 className="font-semibold text-foreground">Alertes budget</h3>
-              </div>
-              <div className="space-y-3">
-                {alertCategories.map((cat: any) => (
-                  <motion.div
-                    key={cat.id}
-                    whileHover={{ x: 4 }}
-                    className="flex items-center justify-between"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div
-                        className="w-10 h-10 rounded-full flex items-center justify-center text-lg"
-                        style={{ backgroundColor: `${cat.color}20` }}
-                      >
-                        {cat.icon}
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium">{cat.name}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {cat.spent.toLocaleString()} / {cat.budget.toLocaleString()}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className={`text-sm font-bold ${cat.percentage >= 100 ? "text-danger" : "text-warning"}`}>
-                        {cat.percentage.toFixed(0)}%
-                      </p>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
-            </Card>
-          </motion.div>
-        )}
       </motion.div>
     </div>
   );
