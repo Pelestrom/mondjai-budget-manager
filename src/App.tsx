@@ -43,7 +43,6 @@ const AppContent = () => {
             <ProtectedRoute>
               <TopBar />
               <Notifications />
-              <BottomTabBar />
             </ProtectedRoute>
           }
         />
@@ -53,7 +52,6 @@ const AppContent = () => {
             <ProtectedRoute>
               <TopBar />
               <Categories />
-              <BottomTabBar />
             </ProtectedRoute>
           }
         />
@@ -92,6 +90,7 @@ const AppContent = () => {
             <ProtectedRoute>
               <TopBar />
               <AddTransaction />
+              <BottomTabBar />
             </ProtectedRoute>
           }
         />

@@ -1,11 +1,14 @@
-import { Bell, Check, X, Trash2 } from "lucide-react";
+import { Bell, Check, X, Trash2, ArrowLeft } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useNotificationStore } from "@/store/notificationStore";
+import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { motion } from "framer-motion";
 
 const Notifications = () => {
+  const navigate = useNavigate();
   const { notifications, markAsRead, markAsUnread, deleteNotification } =
     useNotificationStore();
 
@@ -36,17 +39,29 @@ const Notifications = () => {
   };
 
   return (
-    <div className="min-h-screen pb-24 pt-20">
+    <div className="min-h-screen pb-8 pt-20">
       <div className="p-6 space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex items-center gap-4"
+        >
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate(-1)}
+            className="shrink-0"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
+          <div className="flex-1">
             <h1 className="text-2xl font-bold text-foreground">Notifications</h1>
             <p className="text-sm text-muted-foreground">
               {notifications.filter((n) => !n.read).length} non lues
             </p>
           </div>
           <Bell className="w-6 h-6 text-primary" />
-        </div>
+        </motion.div>
 
         {notifications.length === 0 ? (
           <Card className="p-12 text-center">

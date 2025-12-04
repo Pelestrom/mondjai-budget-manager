@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Plus, Edit, Trash2, ShoppingBag, Car, Home, Wifi, PartyPopper, Briefcase, Gift, Heart, Pill, GraduationCap, CloudRain, Wrench, MoreHorizontal, Plane, Gamepad, Book, ShoppingCart } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Plus, Edit, Trash2, ShoppingBag, Car, Home, Wifi, PartyPopper, Briefcase, Gift, Heart, Pill, GraduationCap, CloudRain, Wrench, MoreHorizontal, Plane, Gamepad, Book, ShoppingCart, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -29,6 +30,7 @@ const iconMap = {
 };
 
 const Categories = () => {
+  const navigate = useNavigate();
   const { categories, addCategory, updateCategory, deleteCategory, initializeDefaultCategories } = useCategoryStore();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
@@ -115,8 +117,16 @@ const Categories = () => {
         animate={{ opacity: 1, y: 0 }}
         className="p-6 space-y-6"
       >
-        <div className="flex items-center justify-between">
-          <div>
+        <div className="flex items-center gap-4">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate(-1)}
+            className="shrink-0"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
+          <div className="flex-1">
             <h1 className="text-2xl font-bold text-foreground">Catégories</h1>
             <p className="text-sm text-muted-foreground">
               {categories.length} catégories

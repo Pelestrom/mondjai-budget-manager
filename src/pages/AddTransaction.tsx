@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Calendar } from "lucide-react";
+import { Calendar, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -23,15 +23,26 @@ const AddTransaction = () => {
   const addTransaction = useTransactionStore((state) => state.addTransaction);
   const categories = useCategoryStore((state) => state.categories);
 
+  const typeFromUrl = searchParams.get("type");
+  const initialType = typeFromUrl === "income" ? "income" : typeFromUrl === "expense" ? "expense" : "expense";
+
   const [formData, setFormData] = useState({
     amount: "",
-    type: (searchParams.get("type") || "expense") as "income" | "expense",
+    type: initialType as "income" | "expense",
     category: "",
     subcategory: "",
     note: "",
     date: new Date(),
     isFixed: false,
   });
+
+  // Update type when URL param changes
+  useEffect(() => {
+    const newType = searchParams.get("type");
+    if (newType === "income" || newType === "expense") {
+      setFormData(prev => ({ ...prev, type: newType }));
+    }
+  }, [searchParams]);
 
   const selectedCategory = categories.find((c) => c.name === formData.category);
 
@@ -71,18 +82,29 @@ const AddTransaction = () => {
   };
 
   return (
-    <div className="min-h-screen pb-8 pt-20">
+    <div className="min-h-screen pb-24 pt-20">
       <div className="p-6 space-y-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
+          className="flex items-center gap-4"
         >
-          <h1 className="text-2xl font-bold text-foreground">
-            Nouvelle transaction
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Enregistrez vos revenus et dépenses
-          </p>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate(-1)}
+            className="shrink-0"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">
+              Nouvelle transaction
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              Enregistrez vos revenus et dépenses
+            </p>
+          </div>
         </motion.div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
