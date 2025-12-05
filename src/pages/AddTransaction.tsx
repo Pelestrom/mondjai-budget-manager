@@ -173,9 +173,13 @@ const AddTransaction = () => {
             <label className="text-sm font-medium">Catégorie</label>
             <Select
               value={formData.category}
-              onValueChange={(value) =>
-                setFormData({ ...formData, category: value, subcategory: "" })
-              }
+              onValueChange={(value) => {
+                if (value === "__add_category__") {
+                  navigate("/categories");
+                } else {
+                  setFormData({ ...formData, category: value, subcategory: "" });
+                }
+              }}
             >
               <SelectTrigger className="h-12">
                 <SelectValue placeholder="Sélectionner une catégorie" />
@@ -184,11 +188,21 @@ const AddTransaction = () => {
                 {categories.map((cat) => (
                   <SelectItem key={cat.id} value={cat.name}>
                     <span className="flex items-center gap-2">
-                      {getCategoryIcon(cat.icon)}
+                      <span className="w-5 h-5 flex items-center justify-center">
+                        {getCategoryIcon(cat.icon)}
+                      </span>
                       {cat.name}
                     </span>
                   </SelectItem>
                 ))}
+                <SelectItem value="__add_category__" className="text-primary font-medium">
+                  <span className="flex items-center gap-2">
+                    <span className="w-5 h-5 flex items-center justify-center">
+                      <LucideIcons.Plus className="w-4 h-4" />
+                    </span>
+                    Ajouter une catégorie
+                  </span>
+                </SelectItem>
               </SelectContent>
             </Select>
           </motion.div>

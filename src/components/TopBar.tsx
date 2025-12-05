@@ -54,10 +54,8 @@ export const TopBar = () => {
                   <motion.span
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
-                    className="absolute -top-0.5 -right-0.5 bg-danger text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center"
-                  >
-                    {unreadCount > 9 ? "9+" : unreadCount}
-                  </motion.span>
+                    className="absolute top-1.5 right-1.5 bg-danger rounded-full w-2.5 h-2.5"
+                  />
                 )}
               </Button>
             </motion.div>
