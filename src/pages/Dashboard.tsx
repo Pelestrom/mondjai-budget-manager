@@ -1,17 +1,20 @@
-import { ArrowUpCircle, ArrowDownCircle, Clock } from "lucide-react";
+import { ArrowUpCircle, ArrowDownCircle, Clock, AlertTriangle, Lightbulb, Info, Sparkles, Target } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useTransactionStore } from "@/store/transactionStore";
 import { useBudgetStore } from "@/store/budgetStore";
 import { useAuthStore } from "@/store/authStore";
+import { useNotificationStore } from "@/store/notificationStore";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const transactions = useTransactionStore((state) => state.transactions);
-  const { budgets } = useBudgetStore();
+  const { budgets, globalBudget } = useBudgetStore();
   const user = useAuthStore((state) => state.user);
+  const notifications = useNotificationStore((state) => state.notifications);
+  const unreadCount = useNotificationStore((state) => state.getUnreadCount());
 
   const currentMonth = new Date().getMonth();
   const currentYear = new Date().getFullYear();
@@ -30,8 +33,10 @@ const Dashboard = () => {
     .reduce((sum, t) => sum + t.amount, 0);
 
   const balance = totalIncome - totalExpenses;
-  const globalBudget = budgets.find((b) => !b.categoryId);
-  const globalBudgetAmount = globalBudget?.amount || 0;
+  
+  // Use globalBudget from store (set via setGlobalBudget) OR find one without categoryId
+  const effectiveGlobalBudget = globalBudget || budgets.find((b) => !b.categoryId);
+  const globalBudgetAmount = effectiveGlobalBudget?.amount || 0;
   const remaining = globalBudgetAmount - totalExpenses;
   
   // Calculate daily amount from smart bar logic
@@ -39,6 +44,19 @@ const Dashboard = () => {
   const today = new Date().getDate();
   const remainingDays = daysInMonth - today + 1;
   const dailyAmount = globalBudgetAmount > 0 ? Math.max(0, remaining / remainingDays) : null;
+
+  // Get notification message
+  const getStatusMessage = () => {
+    if (!globalBudgetAmount) {
+      return { text: "Gère ton budget", icon: Target, type: "budget" };
+    }
+    if (unreadCount > 0) {
+      return { text: "Consulte tes notifications", icon: Info, type: "notification" };
+    }
+    return { text: "Tu gères bien le budget, mode agni activé 🔥", icon: Sparkles, type: "success" };
+  };
+
+  const statusMessage = getStatusMessage();
 
   const container = {
     hidden: { opacity: 0 },
@@ -145,6 +163,35 @@ const Dashboard = () => {
               </Button>
             </motion.div>
           </div>
+        </motion.div>
+
+        {/* Status Message */}
+        <motion.div variants={item}>
+          <Card 
+            onClick={() => navigate(statusMessage.type === "budget" ? "/budgets" : "/notifications")}
+            className={`p-4 rounded-2xl cursor-pointer transition-all hover:scale-[1.02] ${
+              statusMessage.type === "success" 
+                ? "bg-gradient-to-r from-success/10 to-primary/10 border-success/30" 
+                : statusMessage.type === "notification"
+                ? "bg-gradient-to-r from-secondary/20 to-accent/10 border-secondary/30"
+                : "bg-gradient-to-r from-muted to-muted/50 border-border/30"
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <div className={`p-2 rounded-xl ${
+                statusMessage.type === "success" 
+                  ? "bg-success/20 text-success" 
+                  : statusMessage.type === "notification"
+                  ? "bg-secondary/30 text-secondary-foreground"
+                  : "bg-primary/20 text-primary"
+              }`}>
+                <statusMessage.icon className="w-5 h-5" />
+              </div>
+              <p className="text-sm font-medium text-foreground flex-1">
+                {statusMessage.text}
+              </p>
+            </div>
+          </Card>
         </motion.div>
       </motion.div>
     </div>

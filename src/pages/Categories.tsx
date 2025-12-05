@@ -1,6 +1,14 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Edit, Trash2, ShoppingBag, Car, Home, Wifi, PartyPopper, Briefcase, Gift, Heart, Pill, GraduationCap, CloudRain, Wrench, MoreHorizontal, Plane, Gamepad, Book, ShoppingCart, ArrowLeft } from "lucide-react";
+import { 
+  Plus, Edit, Trash2, ShoppingBag, Car, Home, Wifi, PartyPopper, Briefcase, 
+  Gift, Heart, Pill, GraduationCap, CloudRain, Wrench, MoreHorizontal, Plane, 
+  Gamepad, Book, ShoppingCart, ArrowLeft, UtensilsCrossed, AlertTriangle,
+  Coffee, Music, Tv, Phone, CreditCard, Wallet, Banknote, PiggyBank,
+  Building, Hotel, Fuel, Bus, Train, Bike, Ship, Trophy, Dumbbell,
+  Camera, Palette, Scissors, Sparkles, Star, Zap, Flame, Leaf,
+  Apple, Pizza, Salad, Wine, Beer, ShoppingBasket, Package, Truck
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -10,23 +18,13 @@ import { toast } from "sonner";
 import { motion } from "framer-motion";
 
 const iconMap = {
-  ShoppingBag,
-  Car,
-  Home,
-  Wifi,
-  PartyPopper,
-  Briefcase,
-  Gift,
-  Heart,
-  Pill,
-  GraduationCap,
-  CloudRain,
-  Wrench,
-  MoreHorizontal,
-  Plane,
-  Gamepad,
-  Book,
-  ShoppingCart,
+  ShoppingBag, Car, Home, Wifi, PartyPopper, Briefcase, Gift, Heart, Pill,
+  GraduationCap, CloudRain, Wrench, MoreHorizontal, Plane, Gamepad, Book,
+  ShoppingCart, UtensilsCrossed, AlertTriangle, Coffee, Music, Tv, Phone,
+  CreditCard, Wallet, Banknote, PiggyBank, Building, Hotel, Fuel, Bus,
+  Train, Bike, Ship, Trophy, Dumbbell, Camera, Palette, Scissors, Sparkles,
+  Star, Zap, Flame, Leaf, Apple, Pizza, Salad, Wine, Beer, ShoppingBasket,
+  Package, Truck
 };
 
 const Categories = () => {
@@ -48,9 +46,14 @@ const Categories = () => {
   });
 
   const defaultIcons = [
-    "ShoppingBag", "Car", "Home", "Wifi", "PartyPopper", "Briefcase",
-    "Gift", "Heart", "Pill", "GraduationCap", "CloudRain", "Wrench",
-    "Plane", "Gamepad", "Book", "ShoppingCart",
+    "UtensilsCrossed", "ShoppingBag", "Car", "Home", "Wifi", "PartyPopper", 
+    "Briefcase", "Gift", "Heart", "Pill", "GraduationCap", "AlertTriangle",
+    "CloudRain", "Wrench", "Plane", "Gamepad", "Book", "ShoppingCart",
+    "Coffee", "Music", "Tv", "Phone", "CreditCard", "Wallet", "Banknote",
+    "PiggyBank", "Building", "Hotel", "Fuel", "Bus", "Train", "Bike",
+    "Ship", "Trophy", "Dumbbell", "Camera", "Palette", "Scissors", "Sparkles",
+    "Star", "Zap", "Flame", "Leaf", "Apple", "Pizza", "Salad", "Wine",
+    "Beer", "ShoppingBasket", "Package", "Truck"
   ];
 
   const handleSubmit = () => {
@@ -165,16 +168,17 @@ const Categories = () => {
 
                 <div>
                   <label className="text-sm font-medium">Icône</label>
-                  <div className="grid grid-cols-8 gap-2 mt-2">
+                  <div className="grid grid-cols-6 gap-2 mt-2 max-h-48 overflow-y-auto p-1">
                     {defaultIcons.map((iconName) => {
                       const Icon = iconMap[iconName as keyof typeof iconMap];
                       return (
                         <motion.button
                           key={iconName}
+                          type="button"
                           whileHover={{ scale: 1.1 }}
                           whileTap={{ scale: 0.9 }}
                           onClick={() => setFormData({ ...formData, icon: iconName })}
-                          className={`p-3 rounded-xl border-2 transition-all ${
+                          className={`aspect-square p-2 rounded-xl border-2 transition-all flex items-center justify-center ${
                             formData.icon === iconName
                               ? "border-primary bg-primary/10 shadow-md"
                               : "border-border hover:border-primary/50"
