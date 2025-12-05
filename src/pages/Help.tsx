@@ -1,10 +1,13 @@
-import { Book, MessageCircle, Mail } from "lucide-react";
+import { Book, MessageCircle, Mail, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 
 const Help = () => {
+  const navigate = useNavigate();
+  
   const faqs = [
     {
       question: "Comment ajouter une transaction?",
@@ -34,18 +37,25 @@ const Help = () => {
   ];
 
   return (
-    <div className="min-h-screen pb-8 pt-20">
-      <div className="p-6 space-y-6">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
-          <h1 className="text-2xl font-bold text-foreground">Aide</h1>
-          <p className="text-sm text-muted-foreground">
-            Trouvez des réponses à vos questions
-          </p>
-        </motion.div>
+    <div className="min-h-screen pb-8 pt-16 bg-background">
+      {/* Header with back button */}
+      <div className="sticky top-0 z-40 bg-background/95 backdrop-blur-lg border-b border-border/30 px-4 py-3">
+        <div className="flex items-center gap-3">
+          <motion.div whileTap={{ scale: 0.9 }}>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={() => navigate(-1)}
+              className="h-9 w-9"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+          </motion.div>
+          <h1 className="text-lg font-semibold">Aide & Support</h1>
+        </div>
+      </div>
 
+      <div className="px-5 py-6 space-y-6">
         {/* Quick Actions */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -53,11 +63,11 @@ const Help = () => {
           transition={{ delay: 0.1 }}
           className="grid grid-cols-2 gap-3"
         >
-          <Card className="p-4 text-center card-gradient hover:scale-105 transition-transform cursor-pointer">
+          <Card className="p-4 text-center bg-card border-border/50 rounded-2xl hover:bg-muted/50 transition-colors cursor-pointer">
             <Book className="w-8 h-8 mx-auto mb-2 text-primary" />
             <p className="text-sm font-medium">Guide</p>
           </Card>
-          <Card className="p-4 text-center card-gradient hover:scale-105 transition-transform cursor-pointer">
+          <Card className="p-4 text-center bg-card border-border/50 rounded-2xl hover:bg-muted/50 transition-colors cursor-pointer">
             <MessageCircle className="w-8 h-8 mx-auto mb-2 text-primary" />
             <p className="text-sm font-medium">Support</p>
           </Card>
@@ -70,17 +80,17 @@ const Help = () => {
           transition={{ delay: 0.2 }}
           className="space-y-3"
         >
-          <h2 className="text-lg font-semibold text-foreground">
+          <h2 className="text-base font-semibold text-foreground">
             Questions fréquentes
           </h2>
-          <Card className="p-4 card-gradient">
+          <Card className="p-4 bg-card border-border/50 rounded-2xl">
             <Accordion type="single" collapsible>
               {faqs.map((faq, idx) => (
                 <AccordionItem key={idx} value={`item-${idx}`}>
-                  <AccordionTrigger className="text-left">
+                  <AccordionTrigger className="text-left text-sm">
                     {faq.question}
                   </AccordionTrigger>
-                  <AccordionContent className="text-muted-foreground">
+                  <AccordionContent className="text-muted-foreground text-sm">
                     {faq.answer}
                   </AccordionContent>
                 </AccordionItem>
@@ -95,15 +105,15 @@ const Help = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
         >
-          <Card className="p-6 text-center space-y-3 card-gradient">
-            <Mail className="w-12 h-12 mx-auto text-primary" />
+          <Card className="p-6 text-center space-y-3 bg-card border-border/50 rounded-2xl">
+            <Mail className="w-10 h-10 mx-auto text-primary" />
             <div>
               <h3 className="font-semibold text-foreground">Besoin d'aide ?</h3>
               <p className="text-sm text-muted-foreground mt-1">
                 Contactez notre équipe support
               </p>
             </div>
-            <Button className="btn-primary">
+            <Button className="bg-primary text-primary-foreground rounded-xl px-6">
               support@mondjai.com
             </Button>
           </Card>

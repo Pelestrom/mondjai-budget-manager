@@ -1,6 +1,6 @@
 import { NavLink, useLocation } from "react-router-dom";
 import { Home, TrendingUp, Wallet, Plus } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 
 export const BottomTabBar = () => {
   const location = useLocation();
@@ -12,103 +12,76 @@ export const BottomTabBar = () => {
     { path: "/stats", icon: TrendingUp, label: "Stats" },
   ];
 
-  const activeIndex = tabs.findIndex(tab => 
-    tab.path === "/" ? location.pathname === "/" : location.pathname.startsWith(tab.path)
-  );
+  const isActive = (path: string) => {
+    if (path === "/") return location.pathname === "/";
+    return location.pathname.startsWith(path);
+  };
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 safe-area-bottom">
-      <div className="mx-4 mb-4">
-        <motion.div 
-          initial={{ y: 100 }}
-          animate={{ y: 0 }}
-          className="relative bg-card/90 backdrop-blur-xl border border-border/50 rounded-2xl shadow-2xl overflow-hidden"
-        >
-          {/* Active background indicator */}
-          <AnimatePresence>
-            {activeIndex !== -1 && !tabs[activeIndex]?.isSpecial && (
-              <motion.div
-                layoutId="activeTab"
-                className="absolute top-1 bottom-1 bg-primary/10 rounded-xl"
-                style={{
-                  width: `calc(${100 / tabs.length}% - 8px)`,
-                  left: `calc(${(activeIndex * 100) / tabs.length}% + 4px)`,
-                }}
-                transition={{ type: "spring", stiffness: 500, damping: 30 }}
-              />
-            )}
-          </AnimatePresence>
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-lg border-t border-border/30 safe-area-bottom">
+      <div className="flex items-center justify-around h-20 px-4 max-w-md mx-auto relative">
+        {tabs.map((tab) => {
+          const active = isActive(tab.path);
 
-          <div className="flex items-center justify-around h-16 px-2 relative">
-            {tabs.map((tab, index) => {
-              const isActive = tab.path === "/" 
-                ? location.pathname === "/" 
-                : location.pathname.startsWith(tab.path);
-
-              if (tab.isSpecial) {
-                return (
-                  <NavLink
-                    key={tab.path}
-                    to={tab.path}
-                    className="relative flex items-center justify-center"
-                  >
-                    <motion.div
-                      whileHover={{ scale: 1.1, rotate: 90 }}
-                      whileTap={{ scale: 0.9 }}
-                      className="absolute -top-8 w-14 h-14 rounded-full bg-gradient-to-br from-primary to-accent shadow-lg shadow-primary/30 flex items-center justify-center"
-                    >
-                      <Plus className="w-7 h-7 text-white" />
-                    </motion.div>
-                    <span className="text-[10px] text-muted-foreground mt-6">
-                      {tab.label}
-                    </span>
-                  </NavLink>
-                );
-              }
-
-              return (
-                <NavLink
-                  key={tab.path}
-                  to={tab.path}
-                  className="flex-1 flex flex-col items-center justify-center h-full relative z-10"
+          if (tab.isSpecial) {
+            return (
+              <NavLink
+                key={tab.path}
+                to={tab.path}
+                className="relative flex flex-col items-center justify-center -mt-6"
+              >
+                <motion.div
+                  whileTap={{ scale: 0.9 }}
+                  className="w-14 h-14 rounded-2xl bg-primary shadow-lg shadow-primary/40 flex items-center justify-center"
                 >
+                  <Plus className="w-7 h-7 text-primary-foreground" />
+                </motion.div>
+                <span className="text-[10px] text-muted-foreground mt-1.5 font-medium">
+                  {tab.label}
+                </span>
+              </NavLink>
+            );
+          }
+
+          return (
+            <NavLink
+              key={tab.path}
+              to={tab.path}
+              className="flex flex-col items-center justify-center py-2 px-4"
+            >
+              <motion.div
+                animate={{
+                  scale: active ? 1 : 1,
+                  y: active ? -4 : 0,
+                }}
+                transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                className="relative flex flex-col items-center"
+              >
+                {active && (
                   <motion.div
-                    animate={{
-                      scale: isActive ? 1.15 : 1,
-                      y: isActive ? -2 : 0,
-                    }}
-                    transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                    className="flex flex-col items-center"
-                  >
-                    <motion.div
-                      animate={{
-                        color: isActive ? "hsl(var(--primary))" : "hsl(var(--muted-foreground))",
-                      }}
-                    >
-                      <tab.icon className="w-5 h-5" />
-                    </motion.div>
-                    <motion.span
-                      animate={{
-                        color: isActive ? "hsl(var(--primary))" : "hsl(var(--muted-foreground))",
-                        fontWeight: isActive ? 600 : 400,
-                      }}
-                      className="text-[10px] mt-1"
-                    >
-                      {tab.label}
-                    </motion.span>
-                    {isActive && (
-                      <motion.div
-                        layoutId="activeDot"
-                        className="absolute -bottom-1 w-1 h-1 bg-primary rounded-full"
-                        transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                      />
-                    )}
-                  </motion.div>
-                </NavLink>
-              );
-            })}
-          </div>
-        </motion.div>
+                    layoutId="tabIndicator"
+                    className="absolute -inset-3 bg-primary/10 rounded-2xl"
+                    transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                  />
+                )}
+                <motion.div
+                  className={`relative z-10 p-2 rounded-xl ${
+                    active ? "text-primary" : "text-muted-foreground"
+                  }`}
+                >
+                  <tab.icon className="w-5 h-5" strokeWidth={active ? 2.5 : 2} />
+                </motion.div>
+                <motion.span
+                  className={`text-[10px] mt-0.5 font-medium relative z-10 ${
+                    active ? "text-primary" : "text-muted-foreground"
+                  }`}
+                >
+                  {tab.label}
+                </motion.span>
+              </motion.div>
+            </NavLink>
+          );
+        })}
       </div>
     </nav>
   );

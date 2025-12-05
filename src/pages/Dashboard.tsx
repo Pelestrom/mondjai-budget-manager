@@ -1,4 +1,4 @@
-import { ArrowUpCircle, ArrowDownCircle, TrendingUp } from "lucide-react";
+import { ArrowUpCircle, ArrowDownCircle, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useTransactionStore } from "@/store/transactionStore";
@@ -45,7 +45,7 @@ const Dashboard = () => {
     show: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.1,
+        staggerChildren: 0.08,
       },
     },
   };
@@ -56,90 +56,92 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen pb-24 pt-20 bg-gradient-to-br from-background via-primary/5 to-background">
+    <div className="min-h-screen pb-28 pt-20 bg-background">
       <motion.div
         variants={container}
         initial="hidden"
         animate="show"
-        className="p-6 space-y-6"
+        className="px-5 py-6 space-y-5"
       >
         {/* Main Balance Card */}
         <motion.div variants={item}>
-          <Card className="floating-card p-8 bg-gradient-to-br from-primary to-accent text-white border-0 overflow-hidden relative">
-            <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -mr-20 -mt-20"></div>
-            <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/10 rounded-full -ml-16 -mb-16"></div>
+          <Card className="p-6 bg-gradient-to-br from-primary via-primary to-accent text-primary-foreground border-0 rounded-3xl overflow-hidden relative shadow-xl">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16" />
+            <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full -ml-12 -mb-12" />
             
             <div className="relative z-10">
-              <p className="text-sm opacity-90 mb-2">Solde du mois</p>
-              <h1 className="text-4xl font-bold mb-4">
+              <p className="text-sm opacity-80 font-medium">Solde</p>
+              <h1 className="text-3xl font-bold mt-1">
                 {balance.toLocaleString()} {user?.currency || "FCFA"}
               </h1>
-              <div className="flex items-center gap-6 text-sm">
-                <div className="flex items-center gap-2">
+              <div className="flex items-center gap-5 mt-4 text-sm">
+                <div className="flex items-center gap-2 bg-white/20 rounded-full px-3 py-1.5">
                   <ArrowUpCircle className="w-4 h-4" />
-                  <span>+{totalIncome.toLocaleString()}</span>
+                  <span className="font-medium">+{totalIncome.toLocaleString()}</span>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 bg-white/20 rounded-full px-3 py-1.5">
                   <ArrowDownCircle className="w-4 h-4" />
-                  <span>-{totalExpenses.toLocaleString()}</span>
+                  <span className="font-medium">-{totalExpenses.toLocaleString()}</span>
                 </div>
               </div>
             </div>
           </Card>
         </motion.div>
 
-        {/* Remaining Budget & Daily Average */}
-        <div className="grid grid-cols-2 gap-4">
-          <motion.div variants={item}>
-            <Card className="floating-card p-5 bg-gradient-to-br from-card to-card/50 border-border/50">
-              <p className="text-xs text-muted-foreground mb-2">Reste à vivre</p>
-              <p className="text-2xl font-bold text-primary">
-                {globalBudgetAmount > 0 ? remaining.toLocaleString() : "—"}
-              </p>
-            </Card>
-          </motion.div>
-
-          <motion.div variants={item}>
-            <Card className="floating-card p-5 bg-gradient-to-br from-card to-card/50 border-border/50">
-              <p className="text-xs text-muted-foreground mb-2">Par jour</p>
-              <p className="text-2xl font-bold text-secondary">
-                {dailyAmount !== null ? dailyAmount.toFixed(0) : "Pas de budget"}
-              </p>
-            </Card>
-          </motion.div>
-        </div>
+        {/* Daily Budget Card */}
+        <motion.div variants={item}>
+          <Card className="p-5 bg-gradient-to-r from-secondary/20 to-secondary/10 border-secondary/30 rounded-2xl">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-muted-foreground font-medium">Budget par jour</p>
+                <p className="text-2xl font-bold text-secondary-foreground mt-1">
+                  {dailyAmount !== null 
+                    ? `${dailyAmount.toFixed(0)} ${user?.currency || "FCFA"}`
+                    : "Pas de budget"
+                  }
+                </p>
+              </div>
+              {dailyAmount !== null && (
+                <div className="text-right">
+                  <p className="text-xs text-muted-foreground">{remainingDays} jours restants</p>
+                </div>
+              )}
+            </div>
+          </Card>
+        </motion.div>
 
         {/* Quick Actions */}
         <motion.div variants={item}>
+          <p className="text-sm font-semibold text-foreground mb-3">Actions rapides</p>
           <div className="grid grid-cols-3 gap-3">
-            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+            <motion.div whileTap={{ scale: 0.95 }}>
               <Button
                 onClick={() => navigate("/add-transaction?type=income")}
-                className="w-full h-20 flex flex-col gap-2 bg-gradient-to-br from-success to-success/80 hover:from-success/90 hover:to-success/70 text-white border-0 shadow-lg"
+                className="w-full h-20 flex flex-col gap-2 bg-success hover:bg-success/90 text-white border-0 rounded-2xl shadow-lg shadow-success/20"
               >
                 <ArrowUpCircle className="w-6 h-6" />
-                <span className="text-xs">Entrée</span>
+                <span className="text-xs font-medium">Entrée</span>
               </Button>
             </motion.div>
 
-            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+            <motion.div whileTap={{ scale: 0.95 }}>
               <Button
                 onClick={() => navigate("/add-transaction?type=expense")}
-                className="w-full h-20 flex flex-col gap-2 bg-gradient-to-br from-danger to-danger/80 hover:from-danger/90 hover:to-danger/70 text-white border-0 shadow-lg"
+                className="w-full h-20 flex flex-col gap-2 bg-danger hover:bg-danger/90 text-white border-0 rounded-2xl shadow-lg shadow-danger/20"
               >
                 <ArrowDownCircle className="w-6 h-6" />
-                <span className="text-xs">Dépense</span>
+                <span className="text-xs font-medium">Dépense</span>
               </Button>
             </motion.div>
 
-            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+            <motion.div whileTap={{ scale: 0.95 }}>
               <Button
                 onClick={() => navigate("/history")}
                 variant="outline"
-                className="w-full h-20 flex flex-col gap-2 glassmorphism border-border/50 hover:bg-accent/10"
+                className="w-full h-20 flex flex-col gap-2 bg-card border-border/50 rounded-2xl hover:bg-muted/50"
               >
-                <TrendingUp className="w-6 h-6" />
-                <span className="text-xs">Historique</span>
+                <Clock className="w-6 h-6 text-muted-foreground" />
+                <span className="text-xs font-medium text-muted-foreground">Historique</span>
               </Button>
             </motion.div>
           </div>
