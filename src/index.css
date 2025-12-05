@@ -175,4 +175,24 @@ All colors MUST be HSL.
     @apply rounded-3xl shadow-lg backdrop-blur-sm;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1), 0 2px 8px rgba(0, 0, 0, 0.06);
   }
+
+  .bg-success {
+    background-color: hsl(var(--success));
+  }
+
+  .bg-danger {
+    background-color: hsl(var(--danger));
+  }
+
+  .shadow-success\/20 {
+    --tw-shadow-color: hsl(var(--success) / 0.2);
+  }
+
+  .shadow-danger\/20 {
+    --tw-shadow-color: hsl(var(--danger) / 0.2);
+  }
+
+  .text-danger {
+    color: hsl(var(--danger));
+  }
 }
