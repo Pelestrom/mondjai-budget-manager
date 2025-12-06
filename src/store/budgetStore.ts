@@ -17,6 +17,7 @@ interface BudgetState {
   updateBudget: (id: string, updates: Partial<Budget>) => void;
   deleteBudget: (id: string) => void;
   setGlobalBudget: (budget: Omit<Budget, 'id'>) => void;
+  resetAllBudgets: () => void;
 }
 
 export const useBudgetStore = create<BudgetState>()(
@@ -41,6 +42,11 @@ export const useBudgetStore = create<BudgetState>()(
       setGlobalBudget: (budget) =>
         set(() => ({
           globalBudget: { ...budget, id: 'global' },
+        })),
+      resetAllBudgets: () =>
+        set(() => ({
+          budgets: [],
+          globalBudget: null,
         })),
     }),
     {

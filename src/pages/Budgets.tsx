@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Plus, Wallet, Trash2, AlertTriangle, TrendingDown, Calendar } from "lucide-react";
+import { Plus, Wallet, Trash2, AlertTriangle, TrendingDown, Calendar, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -13,6 +13,7 @@ import { useCategoryStore } from "@/store/categoryStore";
 import { useTransactionStore } from "@/store/transactionStore";
 import { useAuthStore } from "@/store/authStore";
 import { useSettingsStore } from "@/store/settingsStore";
+import { useNotificationStore } from "@/store/notificationStore";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { format, startOfWeek, startOfMonth, endOfWeek, endOfMonth, differenceInDays, isWithinInterval } from "date-fns";
@@ -22,10 +23,11 @@ import * as LucideIcons from "lucide-react";
 
 const Budgets = () => {
   const user = useAuthStore((state) => state.user);
-  const { budgets, globalBudget, addBudget, deleteBudget, setGlobalBudget } = useBudgetStore();
+  const { budgets, globalBudget, addBudget, deleteBudget, setGlobalBudget, resetAllBudgets } = useBudgetStore();
   const categories = useCategoryStore((state) => state.categories);
   const transactions = useTransactionStore((state) => state.transactions);
   const smartBarEnabled = useSettingsStore((state) => state.smartBarEnabled);
+  const addNotification = useNotificationStore((state) => state.addNotification);
   
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isGlobalDialogOpen, setIsGlobalDialogOpen] = useState(false);
@@ -150,6 +152,18 @@ const Budgets = () => {
     return <LucideIcons.Package className="w-5 h-5" />;
   };
 
+  const handleResetAllBudgets = () => {
+    if (confirm("Êtes-vous sûr de vouloir réinitialiser tous les budgets? Cette action est irréversible.")) {
+      resetAllBudgets();
+      toast.success("Tous les budgets ont été réinitialisés");
+      addNotification({
+        title: "Budgets réinitialisés",
+        message: "Tous vos budgets ont été supprimés. Vous pouvez maintenant en créer de nouveaux.",
+        type: "info",
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen pb-24 pt-20">
       <div className="p-6 space-y-6">
@@ -164,6 +178,17 @@ const Budgets = () => {
               Gérez vos limites de dépenses
             </p>
           </div>
+          {(globalBudget || budgets.length > 0) && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleResetAllBudgets}
+              className="text-danger border-danger/50 hover:bg-danger/10"
+            >
+              <RotateCcw className="w-4 h-4 mr-1" />
+              Réinitialiser
+            </Button>
+          )}
         </motion.div>
 
         {/* Global Budget Card */}

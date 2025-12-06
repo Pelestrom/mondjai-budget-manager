@@ -17,6 +17,7 @@ import History from "./pages/History";
 import AddTransaction from "./pages/AddTransaction";
 import Settings from "./pages/Settings";
 import Help from "./pages/Help";
+import ManageTransactions from "./pages/ManageTransactions";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -109,6 +110,15 @@ const AppContent = () => {
             <ProtectedRoute>
               <TopBar />
               <Help />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/manage-transactions"
+          element={
+            <ProtectedRoute>
+              <TopBar />
+              <ManageTransactions />
             </ProtectedRoute>
           }
         />
