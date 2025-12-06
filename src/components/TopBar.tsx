@@ -1,4 +1,4 @@
-import { Bell, Menu, User, Clock, Settings, LogOut, Grid3X3, HelpCircle } from "lucide-react";
+import { Bell, Menu, User, Clock, Settings, LogOut, Grid3X3, HelpCircle, Download, Wallet } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuthStore } from "@/store/authStore";
 import { useNotificationStore } from "@/store/notificationStore";
@@ -23,6 +23,21 @@ export const TopBar = () => {
   const handleLogout = () => {
     logout();
     navigate("/login");
+  };
+
+  const handleExportData = () => {
+    // Export functionality placeholder
+    const data = {
+      exportDate: new Date().toISOString(),
+      user: user?.username,
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `mondjai-export-${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   const firstLetter = user?.username?.charAt(0).toUpperCase() || "U";
@@ -70,7 +85,7 @@ export const TopBar = () => {
                 </Button>
               </motion.div>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-52 bg-popover shadow-xl border-border/50">
+            <DropdownMenuContent align="end" className="w-56 bg-popover shadow-xl border-border/50">
               {/* User Profile */}
               <DropdownMenuItem 
                 onClick={() => navigate("/settings")} 
@@ -87,6 +102,10 @@ export const TopBar = () => {
                 </div>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => navigate("/manage-transactions")} className="flex items-center gap-3 py-2.5 cursor-pointer">
+                <Wallet className="w-4 h-4 text-muted-foreground" />
+                <span>Gérer mes entrées/dépenses</span>
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={() => navigate("/history")} className="flex items-center gap-3 py-2.5 cursor-pointer">
                 <Clock className="w-4 h-4 text-muted-foreground" />
                 <span>Historique</span>
@@ -102,6 +121,11 @@ export const TopBar = () => {
               <DropdownMenuItem onClick={() => navigate("/help")} className="flex items-center gap-3 py-2.5 cursor-pointer">
                 <HelpCircle className="w-4 h-4 text-muted-foreground" />
                 <span>Aide & Support</span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleExportData} className="flex items-center gap-3 py-2.5 cursor-pointer">
+                <Download className="w-4 h-4 text-muted-foreground" />
+                <span>Exporter les données</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleLogout} className="flex items-center gap-3 py-2.5 cursor-pointer text-danger">

@@ -211,9 +211,9 @@ const Settings = () => {
           <Card className="p-4 space-y-4 card-gradient">
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-medium">Dépenses fixes</p>
+                <p className="font-medium">Entrées/Dépenses fixes</p>
                 <p className="text-sm text-muted-foreground">
-                  Activer la gestion des dépenses récurrentes
+                  Activer la gestion des transactions récurrentes
                 </p>
               </div>
               <Switch
@@ -260,44 +260,6 @@ const Settings = () => {
                 onCheckedChange={toggleNotifications}
               />
             </div>
-          </Card>
-        </motion.div>
-
-        {/* Import/Export */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="space-y-3"
-        >
-          <h2 className="text-lg font-semibold text-foreground">Données</h2>
-          <Card className="p-4 space-y-2 card-gradient">
-            <Button variant="ghost" className="w-full justify-start">
-              <Upload className="w-4 h-4 mr-2" />
-              Importer des données
-            </Button>
-            <Button variant="ghost" className="w-full justify-start">
-              <Download className="w-4 h-4 mr-2" />
-              Exporter des données
-            </Button>
-          </Card>
-        </motion.div>
-
-        {/* Help */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-        >
-          <Card className="p-4 card-gradient">
-            <Button
-              variant="ghost"
-              className="w-full justify-start"
-              onClick={() => navigate("/help")}
-            >
-              <HelpCircle className="w-4 h-4 mr-2" />
-              Aide et support
-            </Button>
           </Card>
         </motion.div>
 
