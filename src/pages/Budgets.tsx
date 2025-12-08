@@ -103,6 +103,17 @@ const Budgets = () => {
     };
   };
 
+  // Calculate total category budgets
+  const totalCategoryBudgets = useMemo(() => {
+    return budgets.reduce((sum, b) => sum + b.amount, 0);
+  }, [budgets]);
+
+  // Calculate available amount for new category budget
+  const availableForCategoryBudget = useMemo(() => {
+    if (!globalBudget) return 0;
+    return globalBudget.amount - totalCategoryBudgets;
+  }, [globalBudget, totalCategoryBudgets]);
+
   const handleSubmit = () => {
     if (!formData.amount || parseFloat(formData.amount) <= 0) {
       toast.error("Veuillez entrer un montant valide");
@@ -113,9 +124,23 @@ const Budgets = () => {
       return;
     }
 
+    const newAmount = parseFloat(formData.amount);
+
+    // Check if global budget exists
+    if (!globalBudget) {
+      toast.error("Veuillez d'abord définir un budget global");
+      return;
+    }
+
+    // Check if the new category budget would exceed the global budget
+    if (newAmount > availableForCategoryBudget) {
+      toast.error(`Montant trop élevé. Maximum disponible: ${availableForCategoryBudget.toLocaleString()} ${user?.currency}`);
+      return;
+    }
+
     addBudget({
       categoryId: formData.categoryId,
-      amount: parseFloat(formData.amount),
+      amount: newAmount,
       period: formData.period,
       startDate: formData.period === "custom" ? formData.startDate.toISOString() : undefined,
       endDate: formData.period === "custom" ? formData.endDate.toISOString() : undefined,

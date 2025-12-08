@@ -21,6 +21,7 @@ const AddTransaction = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const addTransaction = useTransactionStore((state) => state.addTransaction);
+  const transactions = useTransactionStore((state) => state.transactions);
   const categories = useCategoryStore((state) => state.categories);
 
   const typeFromUrl = searchParams.get("type");
@@ -35,6 +36,11 @@ const AddTransaction = () => {
     date: new Date(),
     isFixed: false,
   });
+
+  // Calculate available balance (total income - total expenses)
+  const availableBalance = transactions.reduce((acc, t) => {
+    return t.type === "income" ? acc + t.amount : acc - t.amount;
+  }, 0);
 
   // Update type when URL param changes
   useEffect(() => {
@@ -67,8 +73,16 @@ const AddTransaction = () => {
       return;
     }
 
+    const amount = parseFloat(formData.amount);
+
+    // Check if expense exceeds available balance
+    if (formData.type === "expense" && amount > availableBalance) {
+      toast.error(`Solde insuffisant. Disponible: ${availableBalance.toLocaleString()}`);
+      return;
+    }
+
     addTransaction({
-      amount: parseFloat(formData.amount),
+      amount,
       type: formData.type,
       category: formData.category,
       subcategory: formData.subcategory || undefined,
