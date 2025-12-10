@@ -8,7 +8,7 @@ import { useAuthStore } from "@/store/authStore";
 import { useCategoryStore } from "@/store/categoryStore";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import { User, Lock, GraduationCap } from "lucide-react";
+import { User, Lock, GraduationCap, Eye, EyeOff } from "lucide-react";
 import mondjaiLogo from "@/assets/mondjai-logo.png";
 import { currencies } from "@/lib/currencies";
 
@@ -18,6 +18,7 @@ const Register = () => {
   const initializeCategories = useCategoryStore((state) => state.initializeDefaultCategories);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [isStudent, setIsStudent] = useState(false);
   const [currency, setCurrency] = useState("FCFA");
 
@@ -56,7 +57,7 @@ const Register = () => {
             transition={{ type: "spring", delay: 0.2 }}
             className="text-center space-y-3"
           >
-            <img src={mondjaiLogo} alt="MonDjai" className="h-24 mx-auto" />
+            <img src={mondjaiLogo} alt="MonDjai" className="h-16 mx-auto" />
             <p className="text-sm text-muted-foreground">
               Commencez à gérer votre budget
             </p>
@@ -69,34 +70,77 @@ const Register = () => {
             transition={{ delay: 0.3 }}
             className="space-y-4"
           >
-            <div className="space-y-2">
+            {/* Username Field */}
+            <motion.div
+              className="space-y-2"
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.4 }}
+            >
               <label className="text-sm font-medium">Nom d'utilisateur</label>
-              <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+              <motion.div
+                className="relative"
+                whileFocus="focus"
+                variants={{
+                  focus: { scale: 1.02 },
+                }}
+              >
+                <User className="absolute left-3 top-3 w-5 h-5 text-muted-foreground pointer-events-none" />
                 <Input
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   placeholder="Choisissez un nom"
                   className="pl-10 input-field"
                 />
-              </div>
-            </div>
+              </motion.div>
+            </motion.div>
 
-            <div className="space-y-2">
+            {/* Password Field */}
+            <motion.div
+              className="space-y-2"
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.5 }}
+            >
               <label className="text-sm font-medium">Mot de passe</label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+              <motion.div
+                className="relative"
+                whileFocus="focus"
+                variants={{
+                  focus: { scale: 1.02 },
+                }}
+              >
+                <Lock className="absolute left-3 top-3 w-5 h-5 text-muted-foreground pointer-events-none" />
                 <Input
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="pl-10 input-field"
+                  className="pl-10 pr-10 input-field"
                 />
-              </div>
-            </div>
+                <motion.button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-3 text-muted-foreground hover:text-foreground transition-colors"
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  {showPassword ? (
+                    <EyeOff className="w-5 h-5" />
+                  ) : (
+                    <Eye className="w-5 h-5" />
+                  )}
+                </motion.button>
+              </motion.div>
+            </motion.div>
 
-            <div className="space-y-2">
+            {/* Currency Field */}
+            <motion.div
+              className="space-y-2"
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.6 }}
+            >
               <label className="text-sm font-medium">Devise</label>
               <Select value={currency} onValueChange={setCurrency}>
                 <SelectTrigger className="input-field h-12">
@@ -114,9 +158,13 @@ const Register = () => {
                   ))}
                 </SelectContent>
               </Select>
-            </div>
+            </motion.div>
 
+            {/* Student Status */}
             <motion.div
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.7 }}
               whileHover={{ scale: 1.02 }}
               className="floating-card p-4 flex items-center justify-between border-border/50"
             >
@@ -132,7 +180,14 @@ const Register = () => {
               <Switch checked={isStudent} onCheckedChange={setIsStudent} />
             </motion.div>
 
-            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+            {/* Register Button */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.8 }}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
               <Button onClick={handleRegister} className="w-full btn-primary h-12 text-base shadow-lg">
                 S'inscrire
               </Button>
@@ -140,14 +195,19 @@ const Register = () => {
           </motion.div>
 
           {/* Footer */}
-          <div className="text-center">
+          <motion.div
+            className="text-center"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.9 }}
+          >
             <button
               onClick={() => navigate("/login")}
-              className="text-sm text-primary hover:underline font-medium"
+              className="text-sm text-primary hover:underline font-medium transition-colors"
             >
               Déjà un compte ? Se connecter
             </button>
-          </div>
+          </motion.div>
         </div>
       </motion.div>
     </div>
