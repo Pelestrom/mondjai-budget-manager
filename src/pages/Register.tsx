@@ -1,4 +1,5 @@
-import { useState } from "react";
+// @/pages/Register.tsx
+import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,9 +9,9 @@ import { useAuthStore } from "@/store/authStore";
 import { useCategoryStore } from "@/store/categoryStore";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import { User, Lock, GraduationCap, Eye, EyeOff } from "lucide-react";
+import { User, Lock, GraduationCap, Eye, EyeOff, Search } from "lucide-react";
 import mondjaiLogo from "@/assets/mondjai-logo.png";
-import { currencies } from "@/lib/currencies";
+import { getAllDisplayCurrencies } from "@/lib/currencies"; // Import seulement de getAllDisplayCurrencies
 
 const Register = () => {
   const navigate = useNavigate();
@@ -20,16 +21,16 @@ const Register = () => {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isStudent, setIsStudent] = useState(false);
-  const [currency, setCurrency] = useState("FCFA");
+  const [currency, setCurrency] = useState("XAF"); // Changé de "EUR" à "XAF" (Franc CFA) par défaut
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isSelectOpen, setIsSelectOpen] = useState(false);
 
   const handleRegister = () => {
     if (!username || !password) {
       toast.error("Veuillez remplir tous les champs");
       return;
     }
-
     initializeCategories();
-
     login({
       id: Math.random().toString(36).substr(2, 9),
       username,
@@ -37,10 +38,48 @@ const Register = () => {
       currency,
       rememberMe: true,
     });
-
     toast.success("Compte créé avec succès");
     navigate("/");
   };
+
+  // Toutes les devises disponibles
+  const allCurrencies = useMemo(() => getAllDisplayCurrencies(), []);
+
+  // Devises filtrées par la recherche
+  const filteredCurrencies = useMemo(() => {
+    if (!searchQuery.trim()) return allCurrencies;
+    
+    const query = searchQuery.toLowerCase();
+    return allCurrencies.filter(curr =>
+      curr.name.toLowerCase().includes(query) ||
+      curr.id.toLowerCase().includes(query) ||
+      curr.symbol.toLowerCase().includes(query) ||
+      curr.searchTerms.toLowerCase().includes(query)
+    );
+  }, [searchQuery, allCurrencies]);
+
+  // Devise sélectionnée actuellement
+  const selectedCurrency = useMemo(() => 
+    allCurrencies.find(curr => curr.id === currency),
+    [currency, allCurrencies]
+  );
+
+  // Gérer l'ouverture/fermeture du select pour afficher/cacher la recherche
+  const handleSelectOpen = () => {
+    setIsSelectOpen(true);
+  };
+
+  const handleSelectClose = () => {
+    setIsSelectOpen(false);
+    setSearchQuery("");
+  };
+
+  // Effet pour gérer la sélection automatique quand il n'y a qu'un résultat
+  useEffect(() => {
+    if (filteredCurrencies.length === 1 && searchQuery.trim() !== "") {
+      setCurrency(filteredCurrencies[0].id);
+    }
+  }, [filteredCurrencies, searchQuery]);
 
   return (
     <div className="min-h-screen flex items-center justify-center p-6 bg-gradient-to-br from-accent/20 via-background to-primary/20">
@@ -57,7 +96,7 @@ const Register = () => {
             transition={{ type: "spring", delay: 0.2 }}
             className="text-center space-y-3"
           >
-            <img src={mondjaiLogo} alt="MonDjai" className="h-16 mx-auto" />
+            <img src={mondjaiLogo} alt="MonDjai" className="h-12 mx-auto" />
             <p className="text-sm text-muted-foreground">
               Commencez à gérer votre budget
             </p>
@@ -72,66 +111,79 @@ const Register = () => {
           >
             {/* Username Field */}
             <motion.div
-              className="space-y-2"
+              className="space-y-1"
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.4 }}
             >
-              <label className="text-sm font-medium">Nom d'utilisateur</label>
-              <motion.div
-                className="relative"
-                whileFocus="focus"
-                variants={{
-                  focus: { scale: 1.02 },
-                }}
-              >
-                <User className="absolute left-3 top-3 w-5 h-5 text-muted-foreground pointer-events-none" />
-                <Input
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  placeholder="Choisissez un nom"
-                  className="pl-10 input-field"
-                />
-              </motion.div>
+              <div className="flex items-center gap-3">
+                <User className="w-5 h-5 text-muted-foreground flex-shrink-0" />
+                <label className="text-sm font-medium">Nom d'utilisateur</label>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-5 flex-shrink-0" />
+                <motion.div
+                  className="relative flex-1"
+                  whileFocus="focus"
+                  variants={{
+                    focus: { scale: 1.02 },
+                  }}
+                >
+                  <Input
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    placeholder="Choisissez un nom"
+                    className="input-field"
+                    aria-label="Nom d'utilisateur"
+                  />
+                </motion.div>
+              </div>
             </motion.div>
 
             {/* Password Field */}
             <motion.div
-              className="space-y-2"
+              className="space-y-1"
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.5 }}
             >
-              <label className="text-sm font-medium">Mot de passe</label>
-              <motion.div
-                className="relative"
-                whileFocus="focus"
-                variants={{
-                  focus: { scale: 1.02 },
-                }}
-              >
-                <Lock className="absolute left-3 top-3 w-5 h-5 text-muted-foreground pointer-events-none" />
-                <Input
-                  type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="pl-10 pr-10 input-field"
-                />
-                <motion.button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-3 text-muted-foreground hover:text-foreground transition-colors"
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.95 }}
+              <div className="flex items-center gap-3">
+                <Lock className="w-5 h-5 text-muted-foreground flex-shrink-0" />
+                <label className="text-sm font-medium">Mot de passe</label>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-5 flex-shrink-0" />
+                <motion.div
+                  className="relative flex-1 flex items-center"
+                  whileFocus="focus"
+                  variants={{
+                    focus: { scale: 1.02 },
+                  }}
                 >
-                  {showPassword ? (
-                    <EyeOff className="w-5 h-5" />
-                  ) : (
-                    <Eye className="w-5 h-5" />
-                  )}
-                </motion.button>
-              </motion.div>
+                  <Input
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="input-field pr-10"
+                    aria-label="Mot de passe"
+                  />
+                  <motion.button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors flex items-center justify-center"
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.95 }}
+                    aria-label={showPassword ? "Cacher le mot de passe" : "Afficher le mot de passe"}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="w-5 h-5" />
+                    ) : (
+                      <Eye className="w-5 h-5" />
+                    )}
+                  </motion.button>
+                </motion.div>
+              </div>
             </motion.div>
 
             {/* Currency Field */}
@@ -142,20 +194,71 @@ const Register = () => {
               transition={{ delay: 0.6 }}
             >
               <label className="text-sm font-medium">Devise</label>
-              <Select value={currency} onValueChange={setCurrency}>
-                <SelectTrigger className="input-field h-12">
-                  <SelectValue />
+
+              <Select 
+                value={currency} 
+                onValueChange={setCurrency}
+                open={isSelectOpen}
+                onOpenChange={(open) => {
+                  if (open) {
+                    handleSelectOpen();
+                  } else {
+                    handleSelectClose();
+                  }
+                }}
+              >
+                <SelectTrigger className="input-field h-12 relative">
+                  <div className="flex items-center justify-between w-full">
+                    <div className="flex items-center gap-3">
+                      <span className="text-xl">{selectedCurrency?.flag || "🏳️"}</span>
+                      <div className="flex flex-col items-start">
+                        <span className="font-medium">{selectedCurrency?.symbol || ""}</span>
+                        <span className="text-xs text-muted-foreground">{selectedCurrency?.name || "Sélectionnez une devise"}</span>
+                      </div>
+                    </div>
+                    <Search className="w-4 h-4 text-muted-foreground" />
+                  </div>
                 </SelectTrigger>
-                <SelectContent className="max-h-[300px]">
-                  {currencies.map((curr) => (
-                    <SelectItem key={curr.code} value={curr.symbol}>
-                      <span className="flex items-center gap-3">
-                        <span className="text-xl">{curr.flag}</span>
-                        <span>{curr.symbol}</span>
-                        <span className="text-muted-foreground text-sm">- {curr.name}</span>
-                      </span>
-                    </SelectItem>
-                  ))}
+                <SelectContent className="max-h-[400px] p-0">
+                  {/* Champ de recherche intégré */}
+                  <div className="p-2 border-b">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                      <Input
+                        placeholder="Rechercher (pays, devise, code)..."
+                        className="pl-10"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onClick={(e) => e.stopPropagation()}
+                        autoFocus
+                      />
+                    </div>
+                  </div>
+
+                  {/* Liste des devises filtrées */}
+                  <div className="max-h-[300px] overflow-y-auto">
+                    {filteredCurrencies.length > 0 ? (
+                      filteredCurrencies.map((curr) => (
+                        <SelectItem 
+                          key={curr.id} 
+                          value={curr.id}
+                          className="cursor-pointer"
+                        >
+                          <span className="flex items-center gap-3">
+                            <span className="text-xl">{curr.flag}</span>
+                            <span className="flex flex-col items-start">
+                              <span className="font-medium">{curr.symbol}</span>
+                              <span className="text-xs text-muted-foreground">{curr.name}</span>
+                            </span>
+                          </span>
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <div className="p-4 text-center text-muted-foreground">
+                        Aucune devise trouvée. Essayez un autre terme.
+                      </div>
+                    )}
+                  </div>
                 </SelectContent>
               </Select>
             </motion.div>

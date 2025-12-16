@@ -22,7 +22,6 @@ const Login = () => {
       toast.error("Veuillez remplir tous les champs");
       return;
     }
-
     login({
       id: Math.random().toString(36).substr(2, 9),
       username,
@@ -30,7 +29,6 @@ const Login = () => {
       currency: "FCFA",
       rememberMe,
     });
-
     toast.success("Connexion réussie");
     navigate("/");
   };
@@ -50,7 +48,7 @@ const Login = () => {
             transition={{ type: "spring", delay: 0.2 }}
             className="text-center space-y-3"
           >
-            <img src={mondjaiLogo} alt="MonDjai" className="h-16 mx-auto" />
+            <img src={mondjaiLogo} alt="MonDjai" className="h-12 mx-auto" />
             <p className="text-sm text-muted-foreground">
               Gérez votre budget intelligemment
             </p>
@@ -65,68 +63,81 @@ const Login = () => {
           >
             {/* Username Field */}
             <motion.div
-              className="space-y-2"
+              className="space-y-1"
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.4 }}
             >
-              <label className="text-sm font-medium">Nom d'utilisateur</label>
-              <motion.div
-                className="relative"
-                whileFocus="focus"
-                variants={{
-                  focus: { scale: 1.02 },
-                }}
-              >
-                <User className="absolute left-3 top-3 w-5 h-5 text-muted-foreground pointer-events-none" />
-                <Input
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  placeholder="Entrez votre nom"
-                  className="pl-10 input-field"
-                  onKeyDown={(e) => e.key === "Enter" && handleLogin()}
-                />
-              </motion.div>
+              <div className="flex items-center gap-3">
+                <User className="w-5 h-5 text-muted-foreground flex-shrink-0" />
+                <label className="text-sm font-medium">Nom d'utilisateur</label>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-5 flex-shrink-0" />
+                <motion.div
+                  className="relative flex-1"
+                  whileFocus="focus"
+                  variants={{
+                    focus: { scale: 1.02 },
+                  }}
+                >
+                  <Input
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    placeholder="Entrez votre nom"
+                    className="input-field"
+                    onKeyDown={(e) => e.key === "Enter" && handleLogin()}
+                    aria-label="Nom d'utilisateur"
+                  />
+                </motion.div>
+              </div>
             </motion.div>
 
             {/* Password Field */}
             <motion.div
-              className="space-y-2"
+              className="space-y-1"
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.5 }}
             >
-              <label className="text-sm font-medium">Mot de passe</label>
-              <motion.div
-                className="relative"
-                whileFocus="focus"
-                variants={{
-                  focus: { scale: 1.02 },
-                }}
-              >
-                <Lock className="absolute left-3 top-3 w-5 h-5 text-muted-foreground pointer-events-none" />
-                <Input
-                  type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="pl-10 pr-10 input-field"
-                  onKeyDown={(e) => e.key === "Enter" && handleLogin()}
-                />
-                <motion.button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-3 text-muted-foreground hover:text-foreground transition-colors"
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.95 }}
+              <div className="flex items-center gap-3">
+                <Lock className="w-5 h-5 text-muted-foreground flex-shrink-0" />
+                <label className="text-sm font-medium">Mot de passe</label>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-5 flex-shrink-0" />
+                <motion.div
+                  className="relative flex-1 flex items-center"
+                  whileFocus="focus"
+                  variants={{
+                    focus: { scale: 1.02 },
+                  }}
                 >
-                  {showPassword ? (
-                    <EyeOff className="w-5 h-5" />
-                  ) : (
-                    <Eye className="w-5 h-5" />
-                  )}
-                </motion.button>
-              </motion.div>
+                  <Input
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="input-field pr-10"
+                    onKeyDown={(e) => e.key === "Enter" && handleLogin()}
+                    aria-label="Mot de passe"
+                  />
+                  <motion.button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors flex items-center justify-center"
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.95 }}
+                    aria-label={showPassword ? "Cacher le mot de passe" : "Afficher le mot de passe"}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="w-5 h-5" />
+                    ) : (
+                      <Eye className="w-5 h-5" />
+                    )}
+                  </motion.button>
+                </motion.div>
+              </div>
             </motion.div>
 
             {/* Remember Me */}
