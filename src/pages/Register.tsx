@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { User, Lock, GraduationCap, Eye, EyeOff, Search } from "lucide-react";
 import mondjaiLogo from "@/assets/mondjai-logo.png";
+import bgImage from "@/assets/Background.png";
 import { getAllDisplayCurrencies } from "@/lib/currencies"; // Import seulement de getAllDisplayCurrencies
 
 const Register = () => {
@@ -82,7 +83,15 @@ const Register = () => {
   }, [filteredCurrencies, searchQuery]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6 bg-background">
+    <div
+      className="min-h-screen flex items-center justify-center p-6 bg-background"
+      style={{
+        backgroundImage: `url(${bgImage})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
+      }}
+    >
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
