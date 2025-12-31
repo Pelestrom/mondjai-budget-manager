@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { Lock, User, Eye, EyeOff } from "lucide-react";
 import mondjaiLogo from "@/assets/mondjai-logo.png";
-import bgImage from "@/assets/Background.png";
+// import bgImage from "@/assets/Background.png";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -37,12 +37,12 @@ const Login = () => {
   return (
     <div
       className="min-h-screen flex items-center justify-center p-6 bg-background"
-      style={{
-        backgroundImage: `url(${bgImage})`,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        backgroundRepeat: "no-repeat",
-      }}
+      // style={{
+      //   backgroundImage: `url(${bgImage})`,
+      //   backgroundSize: "cover",
+      //   backgroundPosition: "center",
+      //   backgroundRepeat: "no-repeat",
+      // }}
     >
       <motion.div
         initial={{ opacity: 0, y: 20 }}
