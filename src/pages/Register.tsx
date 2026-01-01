@@ -1,55 +1,71 @@
-// @/pages/Register.tsx
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { useAuthStore } from "@/store/authStore";
-import { useCategoryStore } from "@/store/categoryStore";
+import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import { User, Lock, GraduationCap, Eye, EyeOff, Search } from "lucide-react";
+import { User, Lock, GraduationCap, Eye, EyeOff, Search, Mail } from "lucide-react";
 import mondjaiLogo from "@/assets/mondjai-logo.png";
-
-import { getAllDisplayCurrencies } from "@/lib/currencies"; // Import seulement de getAllDisplayCurrencies
+import { getAllDisplayCurrencies } from "@/lib/currencies";
 
 const Register = () => {
   const navigate = useNavigate();
-  const login = useAuthStore((state) => state.login);
-  const initializeCategories = useCategoryStore((state) => state.initializeDefaultCategories);
+  const { signUp, user } = useAuth();
   const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isStudent, setIsStudent] = useState(false);
-  const [currency, setCurrency] = useState("XAF"); // Changé de "EUR" à "XAF" (Franc CFA) par défaut
+  const [currency, setCurrency] = useState("XAF");
   const [searchQuery, setSearchQuery] = useState("");
   const [isSelectOpen, setIsSelectOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleRegister = () => {
-    if (!username || !password) {
+  // Redirect if already logged in
+  if (user) {
+    navigate("/");
+    return null;
+  }
+
+  const handleRegister = async () => {
+    if (!username || !email || !password) {
       toast.error("Veuillez remplir tous les champs");
       return;
     }
-    initializeCategories();
-    login({
-      id: Math.random().toString(36).substr(2, 9),
+
+    if (password.length < 6) {
+      toast.error("Le mot de passe doit contenir au moins 6 caractères");
+      return;
+    }
+
+    setIsLoading(true);
+    const { error } = await signUp(email, password, {
       username,
-      isStudent,
+      is_student: isStudent,
       currency,
-      rememberMe: true,
     });
+    setIsLoading(false);
+
+    if (error) {
+      if (error.message.includes("already registered")) {
+        toast.error("Cet email est déjà utilisé");
+      } else {
+        toast.error(error.message);
+      }
+      return;
+    }
+
     toast.success("Compte créé avec succès");
     navigate("/");
   };
 
-  // Toutes les devises disponibles
   const allCurrencies = useMemo(() => getAllDisplayCurrencies(), []);
 
-  // Devises filtrées par la recherche
   const filteredCurrencies = useMemo(() => {
     if (!searchQuery.trim()) return allCurrencies;
-    
     const query = searchQuery.toLowerCase();
     return allCurrencies.filter(curr =>
       curr.name.toLowerCase().includes(query) ||
@@ -59,23 +75,11 @@ const Register = () => {
     );
   }, [searchQuery, allCurrencies]);
 
-  // Devise sélectionnée actuellement
   const selectedCurrency = useMemo(() => 
     allCurrencies.find(curr => curr.id === currency),
     [currency, allCurrencies]
   );
 
-  // Gérer l'ouverture/fermeture du select pour afficher/cacher la recherche
-  const handleSelectOpen = () => {
-    setIsSelectOpen(true);
-  };
-
-  const handleSelectClose = () => {
-    setIsSelectOpen(false);
-    setSearchQuery("");
-  };
-
-  // Effet pour gérer la sélection automatique quand il n'y a qu'un résultat
   useEffect(() => {
     if (filteredCurrencies.length === 1 && searchQuery.trim() !== "") {
       setCurrency(filteredCurrencies[0].id);
@@ -83,9 +87,7 @@ const Register = () => {
   }, [filteredCurrencies, searchQuery]);
 
   return (
-    <div
-      className="min-h-screen flex items-center justify-center p-6 bg-background"
-    >
+    <div className="min-h-screen flex items-center justify-center p-6 bg-background">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -125,21 +127,35 @@ const Register = () => {
               </div>
               <div className="flex items-center gap-3">
                 <div className="w-5 flex-shrink-0" />
-                <motion.div
-                  className="relative flex-1"
-                  whileFocus="focus"
-                  variants={{
-                    focus: { scale: 1.02 },
-                  }}
-                >
-                  <Input
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    placeholder="Choisissez un nom"
-                    className="input-field"
-                    aria-label="Nom d'utilisateur"
-                  />
-                </motion.div>
+                <Input
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder="Choisissez un nom"
+                  className="input-field"
+                />
+              </div>
+            </motion.div>
+
+            {/* Email Field */}
+            <motion.div
+              className="space-y-1"
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.45 }}
+            >
+              <div className="flex items-center gap-3">
+                <Mail className="w-5 h-5 text-muted-foreground flex-shrink-0" />
+                <label className="text-sm font-medium">Email</label>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-5 flex-shrink-0" />
+                <Input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="votre@email.com"
+                  className="input-field"
+                />
               </div>
             </motion.div>
 
@@ -156,36 +172,22 @@ const Register = () => {
               </div>
               <div className="flex items-center gap-3">
                 <div className="w-5 flex-shrink-0" />
-                <motion.div
-                  className="relative flex-1 flex items-center"
-                  whileFocus="focus"
-                  variants={{
-                    focus: { scale: 1.02 },
-                  }}
-                >
+                <div className="relative flex-1">
                   <Input
                     type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
                     className="input-field pr-10"
-                    aria-label="Mot de passe"
                   />
-                  <motion.button
+                  <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors flex items-center justify-center"
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.95 }}
-                    aria-label={showPassword ? "Cacher le mot de passe" : "Afficher le mot de passe"}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                   >
-                    {showPassword ? (
-                      <EyeOff className="w-5 h-5" />
-                    ) : (
-                      <Eye className="w-5 h-5" />
-                    )}
-                  </motion.button>
-                </motion.div>
+                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
               </div>
             </motion.div>
 
@@ -197,70 +199,46 @@ const Register = () => {
               transition={{ delay: 0.6 }}
             >
               <label className="text-sm font-medium">Devise</label>
-
               <Select 
                 value={currency} 
                 onValueChange={setCurrency}
                 open={isSelectOpen}
-                onOpenChange={(open) => {
-                  if (open) {
-                    handleSelectOpen();
-                  } else {
-                    handleSelectClose();
-                  }
-                }}
+                onOpenChange={setIsSelectOpen}
               >
-                <SelectTrigger className="input-field h-12 relative">
-                  <div className="flex items-center justify-between w-full">
-                    <div className="flex items-center gap-3">
-                      <span className="text-xl">{selectedCurrency?.flag || "🏳️"}</span>
-                      <div className="flex flex-col items-start">
-                        <span className="font-medium">{selectedCurrency?.symbol || ""}</span>
-                        <span className="text-xs text-muted-foreground">{selectedCurrency?.name || "Sélectionnez une devise"}</span>
-                      </div>
+                <SelectTrigger className="input-field h-12">
+                  <div className="flex items-center gap-3">
+                    <span className="text-xl">{selectedCurrency?.flag || "🏳️"}</span>
+                    <div className="flex flex-col items-start">
+                      <span className="font-medium">{selectedCurrency?.symbol || ""}</span>
+                      <span className="text-xs text-muted-foreground">{selectedCurrency?.name || "Sélectionnez"}</span>
                     </div>
-                    <Search className="w-4 h-4 text-muted-foreground" />
                   </div>
                 </SelectTrigger>
-                <SelectContent className="max-h-[400px] p-0">
-                  {/* Champ de recherche intégré */}
+                <SelectContent className="max-h-[400px]">
                   <div className="p-2 border-b">
                     <div className="relative">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
                       <Input
-                        placeholder="Rechercher (pays, devise, code)..."
+                        placeholder="Rechercher..."
                         className="pl-10"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         onClick={(e) => e.stopPropagation()}
-                        autoFocus
                       />
                     </div>
                   </div>
-
-                  {/* Liste des devises filtrées */}
                   <div className="max-h-[300px] overflow-y-auto">
-                    {filteredCurrencies.length > 0 ? (
-                      filteredCurrencies.map((curr) => (
-                        <SelectItem 
-                          key={curr.id} 
-                          value={curr.id}
-                          className="cursor-pointer"
-                        >
-                          <span className="flex items-center gap-3">
-                            <span className="text-xl">{curr.flag}</span>
-                            <span className="flex flex-col items-start">
-                              <span className="font-medium">{curr.symbol}</span>
-                              <span className="text-xs text-muted-foreground">{curr.name}</span>
-                            </span>
+                    {filteredCurrencies.map((curr) => (
+                      <SelectItem key={curr.id} value={curr.id}>
+                        <span className="flex items-center gap-3">
+                          <span className="text-xl">{curr.flag}</span>
+                          <span className="flex flex-col items-start">
+                            <span className="font-medium">{curr.symbol}</span>
+                            <span className="text-xs text-muted-foreground">{curr.name}</span>
                           </span>
-                        </SelectItem>
-                      ))
-                    ) : (
-                      <div className="p-4 text-center text-muted-foreground">
-                        Aucune devise trouvée. Essayez un autre terme.
-                      </div>
-                    )}
+                        </span>
+                      </SelectItem>
+                    ))}
                   </div>
                 </SelectContent>
               </Select>
@@ -271,7 +249,6 @@ const Register = () => {
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.7 }}
-              whileHover={{ scale: 1.02 }}
               className="floating-card p-4 flex items-center justify-between border-border/50"
             >
               <div className="flex items-center gap-3">
@@ -280,7 +257,7 @@ const Register = () => {
                 </div>
                 <div>
                   <p className="text-sm font-medium">Statut étudiant</p>
-                  <p className="text-xs text-muted-foreground">Activer les fonctionnalités étudiantes</p>
+                  <p className="text-xs text-muted-foreground">Fonctionnalités étudiantes</p>
                 </div>
               </div>
               <Switch checked={isStudent} onCheckedChange={setIsStudent} />
@@ -291,11 +268,13 @@ const Register = () => {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.8 }}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
             >
-              <Button onClick={handleRegister} className="w-full btn-primary h-12 text-base shadow-lg">
-                S'inscrire
+              <Button 
+                onClick={handleRegister} 
+                disabled={isLoading}
+                className="w-full btn-primary h-12 text-base shadow-lg"
+              >
+                {isLoading ? "Création..." : "S'inscrire"}
               </Button>
             </motion.div>
           </motion.div>
@@ -309,7 +288,7 @@ const Register = () => {
           >
             <button
               onClick={() => navigate("/login")}
-              className="text-sm text-primary hover:underline font-medium transition-colors"
+              className="text-sm text-primary hover:underline font-medium"
             >
               Déjà un compte ? Se connecter
             </button>

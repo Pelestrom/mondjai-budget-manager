@@ -3,47 +3,52 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useAuthStore } from "@/store/authStore";
+import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import { Lock, User, Eye, EyeOff } from "lucide-react";
+import { Lock, Mail, Eye, EyeOff } from "lucide-react";
 import mondjaiLogo from "@/assets/mondjai-logo.png";
-// import bgImage from "@/assets/Background.png";
 
 const Login = () => {
   const navigate = useNavigate();
-  const login = useAuthStore((state) => state.login);
-  const [username, setUsername] = useState("");
+  const { signIn, user } = useAuth();
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = () => {
-    if (!username || !password) {
+  // Redirect if already logged in
+  if (user) {
+    navigate("/");
+    return null;
+  }
+
+  const handleLogin = async () => {
+    if (!email || !password) {
       toast.error("Veuillez remplir tous les champs");
       return;
     }
-    login({
-      id: Math.random().toString(36).substr(2, 9),
-      username,
-      isStudent: false,
-      currency: "FCFA",
-      rememberMe,
-    });
+
+    setIsLoading(true);
+    const { error } = await signIn(email, password);
+    setIsLoading(false);
+
+    if (error) {
+      if (error.message.includes("Invalid login credentials")) {
+        toast.error("Email ou mot de passe incorrect");
+      } else {
+        toast.error(error.message);
+      }
+      return;
+    }
+
     toast.success("Connexion réussie");
     navigate("/");
   };
 
   return (
-    <div
-      className="min-h-screen flex items-center justify-center p-6 bg-background"
-      // style={{
-      //   backgroundImage: `url(${bgImage})`,
-      //   backgroundSize: "cover",
-      //   backgroundPosition: "center",
-      //   backgroundRepeat: "no-repeat",
-      // }}
-    >
+    <div className="min-h-screen flex items-center justify-center p-6 bg-background">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -70,7 +75,7 @@ const Login = () => {
             transition={{ delay: 0.3 }}
             className="space-y-4"
           >
-            {/* Username Field */}
+            {/* Email Field */}
             <motion.div
               className="space-y-1"
               initial={{ opacity: 0, x: -10 }}
@@ -78,27 +83,19 @@ const Login = () => {
               transition={{ delay: 0.4 }}
             >
               <div className="flex items-center gap-3">
-                <User className="w-5 h-5 text-muted-foreground flex-shrink-0" />
-                <label className="text-sm font-medium">Nom d'utilisateur</label>
+                <Mail className="w-5 h-5 text-muted-foreground flex-shrink-0" />
+                <label className="text-sm font-medium">Email</label>
               </div>
               <div className="flex items-center gap-3">
                 <div className="w-5 flex-shrink-0" />
-                <motion.div
-                  className="relative flex-1"
-                  whileFocus="focus"
-                  variants={{
-                    focus: { scale: 1.02 },
-                  }}
-                >
-                  <Input
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    placeholder="Entrez votre nom"
-                    className="input-field"
-                    onKeyDown={(e) => e.key === "Enter" && handleLogin()}
-                    aria-label="Nom d'utilisateur"
-                  />
-                </motion.div>
+                <Input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="votre@email.com"
+                  className="input-field"
+                  onKeyDown={(e) => e.key === "Enter" && handleLogin()}
+                />
               </div>
             </motion.div>
 
@@ -115,13 +112,7 @@ const Login = () => {
               </div>
               <div className="flex items-center gap-3">
                 <div className="w-5 flex-shrink-0" />
-                <motion.div
-                  className="relative flex-1 flex items-center"
-                  whileFocus="focus"
-                  variants={{
-                    focus: { scale: 1.02 },
-                  }}
-                >
+                <div className="relative flex-1">
                   <Input
                     type={showPassword ? "text" : "password"}
                     value={password}
@@ -129,23 +120,15 @@ const Login = () => {
                     placeholder="••••••••"
                     className="input-field pr-10"
                     onKeyDown={(e) => e.key === "Enter" && handleLogin()}
-                    aria-label="Mot de passe"
                   />
-                  <motion.button
+                  <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors flex items-center justify-center"
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.95 }}
-                    aria-label={showPassword ? "Cacher le mot de passe" : "Afficher le mot de passe"}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                   >
-                    {showPassword ? (
-                      <EyeOff className="w-5 h-5" />
-                    ) : (
-                      <Eye className="w-5 h-5" />
-                    )}
-                  </motion.button>
-                </motion.div>
+                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
               </div>
             </motion.div>
 
@@ -161,10 +144,7 @@ const Login = () => {
                 checked={rememberMe}
                 onCheckedChange={(checked) => setRememberMe(checked as boolean)}
               />
-              <label
-                htmlFor="remember"
-                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-              >
+              <label htmlFor="remember" className="text-sm font-medium leading-none">
                 Se souvenir de moi
               </label>
             </motion.div>
@@ -174,11 +154,13 @@ const Login = () => {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.7 }}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
             >
-              <Button onClick={handleLogin} className="w-full btn-primary h-12 text-base shadow-lg">
-                Se connecter
+              <Button 
+                onClick={handleLogin} 
+                disabled={isLoading}
+                className="w-full btn-primary h-12 text-base shadow-lg"
+              >
+                {isLoading ? "Connexion..." : "Se connecter"}
               </Button>
             </motion.div>
           </motion.div>
