@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import {
   ArrowUpCircle,
   ArrowDownCircle,
@@ -12,16 +12,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import cadreImg from "@/assets/cadre.jpg";
-
-import { useTransactionStore } from "@/store/transactionStore";
-import { useBudgetStore } from "@/store/budgetStore";
-import { useAuthStore } from "@/store/authStore";
-import { useNotificationStore } from "@/store/notificationStore";
+import { useTransactions } from "@/hooks/useTransactions";
+import { useBudgets } from "@/hooks/useBudgets";
+import { useAuth } from "@/hooks/useAuth";
+import { useNotifications } from "@/hooks/useNotifications";
 import { useNavigate } from "react-router-dom";
 import { motion, useSpring, useTransform } from "framer-motion";
-import { useBudgetNotifications } from "@/hooks/useBudgetNotifications";
+import { useBudgetNotificationsDB } from "@/hooks/useBudgetNotificationsDB";
 
-// Animated counter component
 const AnimatedNumber = ({
   value,
   currency,
@@ -53,13 +51,13 @@ const AnimatedNumber = ({
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const transactions = useTransactionStore((state) => state.transactions);
-  const { budgets, globalBudget } = useBudgetStore();
-  const user = useAuthStore((state) => state.user);
-  const unreadCount = useNotificationStore((state) => state.getUnreadCount());
+  const { transactions } = useTransactions();
+  const { globalBudget } = useBudgets();
+  const { profile } = useAuth();
+  const { unreadCount } = useNotifications();
   const [isBalanceHidden, setIsBalanceHidden] = useState(false);
 
-  useBudgetNotifications();
+  useBudgetNotificationsDB();
 
   const currentMonth = new Date().getMonth();
   const currentYear = new Date().getFullYear();
@@ -71,16 +69,15 @@ const Dashboard = () => {
 
   const totalIncome = monthTransactions
     .filter((t) => t.type === "income")
-    .reduce((sum, t) => sum + t.amount, 0);
+    .reduce((sum, t) => sum + Number(t.amount), 0);
 
   const totalExpenses = monthTransactions
     .filter((t) => t.type === "expense")
-    .reduce((sum, t) => sum + t.amount, 0);
+    .reduce((sum, t) => sum + Number(t.amount), 0);
 
   const balance = totalIncome - totalExpenses;
 
-  const effectiveGlobalBudget = globalBudget || budgets.find((b) => !b.categoryId);
-  const globalBudgetAmount = effectiveGlobalBudget?.amount || 0;
+  const globalBudgetAmount = globalBudget?.amount || 0;
   const remaining = globalBudgetAmount - totalExpenses;
 
   const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
@@ -114,7 +111,6 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen pb-28 pt-20 bg-background">
       <motion.div variants={container} initial="hidden" animate="show" className="px-5 py-6 space-y-5">
-
         {/* Main Balance Card */}
         <motion.div variants={item}>
           <Card
@@ -123,12 +119,9 @@ const Dashboard = () => {
               backgroundImage: `url(${cadreImg})`,
               backgroundSize: "cover",
               backgroundPosition: "center",
-              backgroundRepeat: "no-repeat",
             }}
           >
-            {/* overlay */}
             <div className="absolute inset-0 bg-black/25" />
-
             <div className="relative z-10">
               <div className="flex items-center justify-between">
                 <p className="text-sm opacity-90 font-medium">Solde</p>
@@ -141,15 +134,13 @@ const Dashboard = () => {
                   {isBalanceHidden ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </Button>
               </div>
-
               <h1 className="text-3xl font-bold mt-1">
                 <AnimatedNumber
                   value={balance}
-                  currency={user?.currency || "FCFA"}
+                  currency={profile?.currency || "FCFA"}
                   hidden={isBalanceHidden}
                 />
               </h1>
-
               <div className="flex items-center gap-5 mt-4 text-sm">
                 <div className="flex items-center gap-2 bg-white/20 rounded-full px-3 py-1.5">
                   <ArrowUpCircle className="w-4 h-4" />
@@ -157,7 +148,6 @@ const Dashboard = () => {
                     {isBalanceHidden ? "••••" : `+${totalIncome.toLocaleString()}`}
                   </span>
                 </div>
-
                 <div className="flex items-center gap-2 bg-white/20 rounded-full px-3 py-1.5">
                   <ArrowDownCircle className="w-4 h-4" />
                   <span className="font-medium">
@@ -177,7 +167,7 @@ const Dashboard = () => {
                 <p className="text-xs text-muted-foreground font-medium">Budget par jour</p>
                 <p className="text-2xl font-bold text-secondary-foreground mt-1">
                   {dailyAmount !== null
-                    ? `${dailyAmount.toFixed(0)} ${user?.currency || "FCFA"}`
+                    ? `${dailyAmount.toFixed(0)} ${profile?.currency || "FCFA"}`
                     : "Pas de budget"}
                 </p>
               </div>
@@ -201,7 +191,6 @@ const Dashboard = () => {
                 <span className="text-xs font-medium">Entrée</span>
               </Button>
             </motion.div>
-
             <motion.div whileTap={{ scale: 0.95 }}>
               <Button
                 onClick={() => navigate("/add-transaction?type=expense")}
@@ -211,7 +200,6 @@ const Dashboard = () => {
                 <span className="text-xs font-medium">Dépense</span>
               </Button>
             </motion.div>
-
             <motion.div whileTap={{ scale: 0.95 }}>
               <Button
                 onClick={() => navigate("/history")}
@@ -249,13 +237,10 @@ const Dashboard = () => {
               >
                 <statusMessage.icon className="w-5 h-5" />
               </div>
-              <p className="text-sm font-medium text-foreground flex-1">
-                {statusMessage.text}
-              </p>
+              <p className="text-sm font-medium text-foreground flex-1">{statusMessage.text}</p>
             </div>
           </Card>
         </motion.div>
-
       </motion.div>
     </div>
   );
