@@ -13,9 +13,10 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { useCategoryStore, Category } from "@/store/categoryStore";
+import { useCategories, Category } from "@/hooks/useCategories";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const iconMap = {
   ShoppingBag, Car, Home, Wifi, PartyPopper, Briefcase, Gift, Heart, Pill,
@@ -29,20 +30,13 @@ const iconMap = {
 
 const Categories = () => {
   const navigate = useNavigate();
-  const { categories, addCategory, updateCategory, deleteCategory, initializeDefaultCategories } = useCategoryStore();
+  const { categories, addCategory, updateCategory, deleteCategory, isLoading } = useCategories();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [formData, setFormData] = useState({
     name: "",
     icon: "ShoppingBag",
     color: "#00A86B",
-  });
-
-  // Initialize default categories if empty
-  useState(() => {
-    if (categories.length === 0) {
-      initializeDefaultCategories();
-    }
   });
 
   const defaultIcons = [
@@ -56,22 +50,26 @@ const Categories = () => {
     "Beer", "ShoppingBasket", "Package", "Truck"
   ];
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!formData.name) {
       toast.error("Veuillez entrer un nom");
       return;
     }
 
-    if (editingCategory) {
-      updateCategory(editingCategory.id, formData);
-      toast.success("Catégorie modifiée");
-    } else {
-      addCategory(formData);
-      toast.success("Catégorie ajoutée");
-    }
+    try {
+      if (editingCategory) {
+        await updateCategory({ id: editingCategory.id, updates: formData });
+        toast.success("Catégorie modifiée");
+      } else {
+        await addCategory(formData);
+        toast.success("Catégorie ajoutée");
+      }
 
-    setIsDialogOpen(false);
-    resetForm();
+      setIsDialogOpen(false);
+      resetForm();
+    } catch (error) {
+      toast.error("Une erreur est survenue");
+    }
   };
 
   const handleEdit = (category: Category) => {
@@ -84,10 +82,14 @@ const Categories = () => {
     setIsDialogOpen(true);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (confirm("Êtes-vous sûr de vouloir supprimer cette catégorie?")) {
-      deleteCategory(id);
-      toast.success("Catégorie supprimée");
+      try {
+        await deleteCategory(id);
+        toast.success("Catégorie supprimée");
+      } catch (error) {
+        toast.error("Une erreur est survenue");
+      }
     }
   };
 
@@ -95,8 +97,6 @@ const Categories = () => {
     setEditingCategory(null);
     setFormData({ name: "", icon: "ShoppingBag", color: "#00A86B" });
   };
-
-  const IconComponent = iconMap[formData.icon as keyof typeof iconMap] || ShoppingBag;
 
   const container = {
     hidden: { opacity: 0 },
@@ -112,6 +112,27 @@ const Categories = () => {
     hidden: { scale: 0.8, opacity: 0 },
     show: { scale: 1, opacity: 1 },
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen pb-24 pt-20 bg-gradient-to-br from-background via-accent/5 to-background">
+        <div className="p-6 space-y-6">
+          <div className="flex items-center gap-4">
+            <Skeleton className="h-10 w-10" />
+            <div className="flex-1">
+              <Skeleton className="h-8 w-32" />
+              <Skeleton className="h-4 w-24 mt-1" />
+            </div>
+          </div>
+          <div className="grid grid-cols-3 gap-4">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <Skeleton key={i} className="h-28 w-full" />
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen pb-24 pt-20 bg-gradient-to-br from-background via-accent/5 to-background">

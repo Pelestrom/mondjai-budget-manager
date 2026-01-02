@@ -1,7 +1,10 @@
 import { Bell, Menu, User, Clock, Settings, LogOut, Grid3X3, HelpCircle, Download, Wallet } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
-import { useAuthStore } from "@/store/authStore";
-import { useNotificationStore } from "@/store/notificationStore";
+import { useAuth } from "@/hooks/useAuth";
+import { useNotifications } from "@/hooks/useNotifications";
+import { useTransactions } from "@/hooks/useTransactions";
+import { useCategories } from "@/hooks/useCategories";
+import { useBudgets } from "@/hooks/useBudgets";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -15,21 +18,26 @@ import { motion } from "framer-motion";
 import mondjaiLogo from "@/assets/mondjai-logo.png";
 
 export const TopBar = () => {
-  const user = useAuthStore((state) => state.user);
-  const logout = useAuthStore((state) => state.logout);
-  const unreadCount = useNotificationStore((state) => state.getUnreadCount());
+  const { profile, signOut } = useAuth();
+  const { unreadCount } = useNotifications();
+  const { transactions } = useTransactions();
+  const { categories } = useCategories();
+  const { budgets, globalBudget } = useBudgets();
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await signOut();
     navigate("/login");
   };
 
   const handleExportData = () => {
-    // Export functionality placeholder
     const data = {
       exportDate: new Date().toISOString(),
-      user: user?.username,
+      user: profile?.username,
+      transactions,
+      categories,
+      budgets,
+      globalBudget,
     };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -40,7 +48,7 @@ export const TopBar = () => {
     URL.revokeObjectURL(url);
   };
 
-  const firstLetter = user?.username?.charAt(0).toUpperCase() || "U";
+  const firstLetter = profile?.username?.charAt(0).toUpperCase() || "U";
 
   return (
     <motion.header
@@ -95,9 +103,9 @@ export const TopBar = () => {
                   {firstLetter}
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm font-medium">{user?.username}</p>
+                  <p className="text-sm font-medium">{profile?.username}</p>
                   <p className="text-xs text-muted-foreground">
-                    {user?.isStudent ? "Étudiant" : "Utilisateur"}
+                    {profile?.is_student ? "Étudiant" : "Utilisateur"}
                   </p>
                 </div>
               </DropdownMenuItem>

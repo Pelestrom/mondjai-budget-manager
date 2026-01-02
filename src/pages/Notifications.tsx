@@ -1,16 +1,16 @@
-import { Bell, Check, X, Trash2, ArrowLeft, AlertTriangle, Lightbulb, Info, CheckCircle, XCircle } from "lucide-react";
+import { Bell, Check, X, Trash2, ArrowLeft, AlertTriangle, Lightbulb, CheckCircle, XCircle } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useNotificationStore } from "@/store/notificationStore";
+import { useNotifications } from "@/hooks/useNotifications";
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { motion } from "framer-motion";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const Notifications = () => {
   const navigate = useNavigate();
-  const { notifications, markAsRead, markAsUnread, deleteNotification } =
-    useNotificationStore();
+  const { notifications, markAsRead, markAsUnread, deleteNotification, isLoading } = useNotifications();
 
   const getIcon = (type: string) => {
     switch (type) {
@@ -50,6 +50,25 @@ const Notifications = () => {
         return "Info";
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen pb-8 pt-20">
+        <div className="p-6 space-y-6">
+          <div className="flex items-center gap-4">
+            <Skeleton className="h-10 w-10" />
+            <div className="flex-1">
+              <Skeleton className="h-8 w-40" />
+              <Skeleton className="h-4 w-24 mt-1" />
+            </div>
+          </div>
+          {[1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-32 w-full" />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen pb-8 pt-20">
@@ -116,7 +135,7 @@ const Notifications = () => {
                           {notif.message}
                         </p>
                         <p className="text-xs text-muted-foreground mt-2">
-                          {format(new Date(notif.date), "PPp", { locale: fr })}
+                          {format(new Date(notif.created_at), "PPp", { locale: fr })}
                         </p>
                       </div>
                     </div>

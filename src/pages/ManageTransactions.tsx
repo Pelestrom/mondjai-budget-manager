@@ -7,20 +7,21 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useTransactionStore, Transaction } from "@/store/transactionStore";
-import { useCategoryStore } from "@/store/categoryStore";
-import { useAuthStore } from "@/store/authStore";
+import { useTransactions, Transaction } from "@/hooks/useTransactions";
+import { useCategories } from "@/hooks/useCategories";
+import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import * as LucideIcons from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const ManageTransactions = () => {
   const navigate = useNavigate();
-  const { transactions, updateTransaction, deleteTransaction } = useTransactionStore();
-  const categories = useCategoryStore((state) => state.categories);
-  const user = useAuthStore((state) => state.user);
+  const { transactions, updateTransaction, deleteTransaction, isLoading: transactionsLoading } = useTransactions();
+  const { categories, isLoading: categoriesLoading } = useCategories();
+  const { profile } = useAuth();
   
   const [search, setSearch] = useState("");
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
@@ -65,26 +66,59 @@ const ManageTransactions = () => {
     });
   };
 
-  const handleSaveEdit = () => {
+  const handleSaveEdit = async () => {
     if (!editingTransaction) return;
     
-    updateTransaction(editingTransaction.id, {
-      amount: parseFloat(editFormData.amount),
-      type: editFormData.type,
-      category: editFormData.category,
-      note: editFormData.note,
-    });
-    
-    toast.success("Transaction modifiée");
-    setEditingTransaction(null);
-  };
-
-  const handleDelete = (id: string) => {
-    if (confirm("Êtes-vous sûr de vouloir supprimer cette transaction?")) {
-      deleteTransaction(id);
-      toast.success("Transaction supprimée");
+    try {
+      await updateTransaction({
+        id: editingTransaction.id,
+        updates: {
+          amount: parseFloat(editFormData.amount),
+          type: editFormData.type,
+          category: editFormData.category,
+          note: editFormData.note,
+        },
+      });
+      
+      toast.success("Transaction modifiée");
+      setEditingTransaction(null);
+    } catch (error) {
+      toast.error("Une erreur est survenue");
     }
   };
+
+  const handleDelete = async (id: string) => {
+    if (confirm("Êtes-vous sûr de vouloir supprimer cette transaction?")) {
+      try {
+        await deleteTransaction(id);
+        toast.success("Transaction supprimée");
+      } catch (error) {
+        toast.error("Une erreur est survenue");
+      }
+    }
+  };
+
+  const isLoading = transactionsLoading || categoriesLoading;
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen pb-8 pt-20">
+        <div className="p-6 space-y-6">
+          <div className="flex items-center gap-4">
+            <Skeleton className="h-10 w-10" />
+            <div>
+              <Skeleton className="h-8 w-48" />
+              <Skeleton className="h-4 w-32 mt-1" />
+            </div>
+          </div>
+          <Skeleton className="h-10 w-full" />
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className="h-20 w-full" />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen pb-8 pt-20">
@@ -174,7 +208,7 @@ const ManageTransactions = () => {
                         </div>
                         <div className="text-right shrink-0">
                           <p className={`font-bold ${transaction.type === "income" ? "text-success" : "text-danger"}`}>
-                            {transaction.type === "income" ? "+" : "-"}{transaction.amount.toLocaleString()} {user?.currency}
+                            {transaction.type === "income" ? "+" : "-"}{transaction.amount.toLocaleString()} {profile?.currency}
                           </p>
                         </div>
                         <div className="flex gap-1 shrink-0">
