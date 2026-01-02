@@ -1,24 +1,25 @@
 import { useMemo, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useTransactionStore } from "@/store/transactionStore";
-import { useCategoryStore } from "@/store/categoryStore";
-import { useAuthStore } from "@/store/authStore";
-import { useSettingsStore } from "@/store/settingsStore";
+import { useTransactions } from "@/hooks/useTransactions";
+import { useCategories } from "@/hooks/useCategories";
+import { useAuth } from "@/hooks/useAuth";
+import { useSettings } from "@/hooks/useSettings";
 import { TrendingUp, TrendingDown } from "lucide-react";
 import { motion } from "framer-motion";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Legend } from "recharts";
-import { format, subDays, startOfWeek, endOfWeek, eachDayOfInterval, isWithinInterval, startOfMonth, endOfMonth } from "date-fns";
+import { format, subDays, startOfWeek, endOfWeek, isWithinInterval, startOfMonth, endOfMonth } from "date-fns";
 import { fr } from "date-fns/locale";
 import * as LucideIcons from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const COLORS = ['#00A86B', '#F2C94C', '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#74B9FF', '#A29BFE', '#FD79A8', '#00B894'];
 
 const Stats = () => {
-  const user = useAuthStore((state) => state.user);
-  const transactions = useTransactionStore((state) => state.transactions);
-  const categories = useCategoryStore((state) => state.categories);
-  const detailedStatsEnabled = useSettingsStore((state) => state.detailedStatsEnabled);
+  const { profile } = useAuth();
+  const { transactions, isLoading: transactionsLoading } = useTransactions();
+  const { categories, isLoading: categoriesLoading } = useCategories();
+  const { settings, isLoading: settingsLoading } = useSettings();
   const [period, setPeriod] = useState<"day" | "week" | "month">("month");
 
   const stats = useMemo(() => {
@@ -108,6 +109,29 @@ const Stats = () => {
     color: cat.color || COLORS[index % COLORS.length],
   }));
 
+  const isLoading = transactionsLoading || categoriesLoading || settingsLoading;
+  const detailedStatsEnabled = settings.detailed_stats_enabled;
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen pb-24 pt-20">
+        <div className="p-6 space-y-6">
+          <div>
+            <Skeleton className="h-8 w-32" />
+            <Skeleton className="h-4 w-48 mt-1" />
+          </div>
+          <Skeleton className="h-10 w-full" />
+          <div className="grid grid-cols-2 gap-4">
+            <Skeleton className="h-28" />
+            <Skeleton className="h-28" />
+          </div>
+          <Skeleton className="h-24 w-full" />
+          <Skeleton className="h-[200px] w-full" />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen pb-24 pt-20">
       <div className="p-6 space-y-6">
@@ -147,7 +171,7 @@ const Stats = () => {
                   {stats.income.toLocaleString()}
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  {user?.currency}
+                  {profile?.currency}
                 </p>
               </Card>
 
@@ -162,7 +186,7 @@ const Stats = () => {
                   {stats.expenses.toLocaleString()}
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  {user?.currency}
+                  {profile?.currency}
                 </p>
               </Card>
             </motion.div>
@@ -176,7 +200,7 @@ const Stats = () => {
               <Card className="p-6 bg-gradient-to-br from-primary to-accent text-primary-foreground">
                 <p className="text-sm opacity-90">Solde</p>
                 <p className="text-3xl font-bold mt-1">
-                  {stats.balance.toLocaleString()} {user?.currency}
+                  {stats.balance.toLocaleString()} {profile?.currency}
                 </p>
               </Card>
             </motion.div>
@@ -324,7 +348,7 @@ const Stats = () => {
                                 border: "1px solid hsl(var(--border))",
                                 borderRadius: "8px",
                               }}
-                              formatter={(value: number) => [`${value.toLocaleString()} ${user?.currency}`, ""]}
+                              formatter={(value: number) => [`${value.toLocaleString()} ${profile?.currency}`, ""]}
                             />
                           </PieChart>
                         </ResponsiveContainer>
@@ -377,7 +401,7 @@ const Stats = () => {
                             </div>
                             <div className="text-right">
                               <p className="text-sm font-semibold">
-                                {cat.amount.toLocaleString()} {user?.currency}
+                                {cat.amount.toLocaleString()} {profile?.currency}
                               </p>
                               <p className="text-xs text-muted-foreground">
                                 {cat.percentage.toFixed(1)}%

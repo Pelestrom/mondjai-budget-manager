@@ -7,32 +7,23 @@ import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useAuthStore } from "@/store/authStore";
-import { useSettingsStore } from "@/store/settingsStore";
+import { useAuth } from "@/hooks/useAuth";
+import { useSettings } from "@/hooks/useSettings";
 import { currencies } from "@/lib/currencies";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const Settings = () => {
   const navigate = useNavigate();
-  const { user, logout, updateUser, biometricEnabled, setBiometric } = useAuthStore();
-  const {
-    fixedExpensesEnabled,
-    detailedStatsEnabled,
-    smartBarEnabled,
-    notificationsEnabled,
-    toggleFixedExpenses,
-    toggleDetailedStats,
-    toggleSmartBar,
-    toggleNotifications,
-  } = useSettingsStore();
+  const { profile, signOut, updateProfile } = useAuth();
+  const { settings, toggleSetting, isLoading: settingsLoading } = useSettings();
 
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isCurrencyOpen, setIsCurrencyOpen] = useState(false);
   const [currencySearch, setCurrencySearch] = useState("");
-  const [selectedCurrency, setSelectedCurrency] = useState(user?.currency || "FCFA");
+  const [selectedCurrency, setSelectedCurrency] = useState(profile?.currency || "XOF");
 
-  const currentCurrency = currencies.find(c => c.symbol === user?.currency || c.code === user?.currency);
+  const currentCurrency = currencies.find(c => c.symbol === profile?.currency || c.code === profile?.currency);
 
   const filteredCurrencies = currencies.filter(c => 
     c.name.toLowerCase().includes(currencySearch.toLowerCase()) ||
@@ -40,20 +31,44 @@ const Settings = () => {
     c.symbol.toLowerCase().includes(currencySearch.toLowerCase())
   );
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     if (confirm("Êtes-vous sûr de vouloir vous déconnecter?")) {
-      logout();
+      await signOut();
       toast.success("Déconnexion réussie");
       navigate("/login");
     }
   };
 
-  const handleSelectCurrency = (symbol: string) => {
+  const handleSelectCurrency = async (symbol: string) => {
     setSelectedCurrency(symbol);
-    updateUser({ currency: symbol });
+    await updateProfile({ currency: symbol });
     setIsCurrencyOpen(false);
     toast.success("Devise mise à jour");
   };
+
+  const handleToggleBiometric = async (checked: boolean) => {
+    await updateProfile({ biometric_enabled: checked });
+    toast.success(checked ? "Biométrie activée" : "Biométrie désactivée");
+  };
+
+  if (settingsLoading) {
+    return (
+      <div className="min-h-screen pb-8 pt-20">
+        <div className="p-6 space-y-6">
+          <div className="flex items-center gap-4">
+            <Skeleton className="h-10 w-10" />
+            <div>
+              <Skeleton className="h-8 w-32" />
+              <Skeleton className="h-4 w-48 mt-1" />
+            </div>
+          </div>
+          <Skeleton className="h-40 w-full" />
+          <Skeleton className="h-32 w-full" />
+          <Skeleton className="h-48 w-full" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen pb-8 pt-20">
@@ -90,13 +105,13 @@ const Settings = () => {
               <div className="flex items-center gap-3">
                 <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
                   <span className="text-2xl font-bold text-white">
-                    {user?.username?.charAt(0).toUpperCase()}
+                    {profile?.username?.charAt(0).toUpperCase()}
                   </span>
                 </div>
                 <div>
-                  <h3 className="font-semibold text-foreground">{user?.username}</h3>
+                  <h3 className="font-semibold text-foreground">{profile?.username}</h3>
                   <p className="text-sm text-muted-foreground">
-                    {user?.isStudent ? "Étudiant" : "Non-étudiant"}
+                    {profile?.is_student ? "Étudiant" : "Non-étudiant"}
                   </p>
                 </div>
               </div>
@@ -108,7 +123,7 @@ const Settings = () => {
                 <Button variant="outline" className="w-full justify-between mt-4">
                   <span className="flex items-center gap-2">
                     <span className="text-xl">{currentCurrency?.flag || "🌍"}</span>
-                    <span>Devise: {user?.currency}</span>
+                    <span>Devise: {profile?.currency}</span>
                   </span>
                   <span className="text-muted-foreground">Modifier</span>
                 </Button>
@@ -177,15 +192,8 @@ const Settings = () => {
                 </p>
               </div>
               <Switch
-                checked={biometricEnabled}
-                onCheckedChange={(checked) => {
-                  setBiometric(checked);
-                  toast.success(
-                    checked
-                      ? "Biométrie activée"
-                      : "Biométrie désactivée"
-                  );
-                }}
+                checked={profile?.biometric_enabled || false}
+                onCheckedChange={handleToggleBiometric}
               />
             </div>
           </Card>
@@ -217,8 +225,8 @@ const Settings = () => {
                 </p>
               </div>
               <Switch
-                checked={fixedExpensesEnabled}
-                onCheckedChange={toggleFixedExpenses}
+                checked={settings.fixed_expenses_enabled}
+                onCheckedChange={() => toggleSetting('fixed_expenses_enabled')}
               />
             </div>
 
@@ -230,8 +238,8 @@ const Settings = () => {
                 </p>
               </div>
               <Switch
-                checked={detailedStatsEnabled}
-                onCheckedChange={toggleDetailedStats}
+                checked={settings.detailed_stats_enabled}
+                onCheckedChange={() => toggleSetting('detailed_stats_enabled')}
               />
             </div>
 
@@ -243,8 +251,8 @@ const Settings = () => {
                 </p>
               </div>
               <Switch
-                checked={smartBarEnabled}
-                onCheckedChange={toggleSmartBar}
+                checked={settings.smart_bar_enabled}
+                onCheckedChange={() => toggleSetting('smart_bar_enabled')}
               />
             </div>
 
@@ -256,8 +264,8 @@ const Settings = () => {
                 </p>
               </div>
               <Switch
-                checked={notificationsEnabled}
-                onCheckedChange={toggleNotifications}
+                checked={settings.notifications_enabled}
+                onCheckedChange={() => toggleSetting('notifications_enabled')}
               />
             </div>
           </Card>
