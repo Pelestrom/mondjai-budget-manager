@@ -87,11 +87,16 @@ const Register = () => {
   }, [filteredCurrencies, searchQuery]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6 bg-background">
+    <div className="min-h-screen flex items-center justify-center p-6 relative overflow-hidden">
+      {/* Background split */}
+      <div className="absolute inset-0 z-0">
+        <div className="h-1/2 bg-primary" />
+        <div className="h-1/2 bg-primary/80" />
+      </div>
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-md"
+        className="w-full max-w-md z-10"
       >
         <div className="floating-card glassmorphism p-8 space-y-6">
           {/* Logo */}
