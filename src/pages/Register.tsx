@@ -91,7 +91,7 @@ const Register = () => {
       {/* Background split */}
       <div className="absolute inset-0 z-0">
         <div className="h-1/2 bg-primary" />
-        <div className="h-1/2 bg-primary/80" />
+        <div className="h-1/2 bg-background" />
       </div>
       <motion.div
         initial={{ opacity: 0, y: 20 }}
