@@ -24,12 +24,6 @@ const Register = () => {
   const [isSelectOpen, setIsSelectOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Redirect if already logged in
-  if (user) {
-    navigate("/");
-    return null;
-  }
-
   const handleRegister = async () => {
     if (!username || !email || !password) {
       toast.error("Veuillez remplir tous les champs");
@@ -86,12 +80,19 @@ const Register = () => {
     }
   }, [filteredCurrencies, searchQuery]);
 
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user) {
+      navigate("/");
+    }
+  }, [user, navigate]);
+
   return (
     <div className="min-h-screen flex items-center justify-center p-6 relative overflow-hidden">
       {/* Background split */}
       <div className="absolute inset-0 z-0">
         <div className="h-1/2 bg-primary" />
-        <div className="h-1/2 bg-background" />
+        <div className="h-1/2 bg-primary/80" />
       </div>
       <motion.div
         initial={{ opacity: 0, y: 20 }}
