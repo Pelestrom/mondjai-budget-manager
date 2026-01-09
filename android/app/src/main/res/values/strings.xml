@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">MonDjai</string>
+    <string name="title_activity_main">MonDjai</string>
+    <string name="package_name">app.lovable.da72b7cc8927485da1a7037801793cb4</string>
+    <string name="custom_url_scheme">app.lovable.da72b7cc8927485da1a7037801793cb4</string>
+</resources>
