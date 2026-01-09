@@ -234,18 +234,25 @@ const AddTransaction = () => {
             </Popover>
           </motion.div>
 
-          {formData.type === "expense" && (
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }} className="flex items-center space-x-2">
-              <Checkbox
-                id="fixed"
-                checked={formData.isFixed}
-                onCheckedChange={(checked) => setFormData({ ...formData, isFixed: checked as boolean })}
-              />
-              <label htmlFor="fixed" className="text-sm text-foreground cursor-pointer">
-                Dépense fixe (récurrente)
-              </label>
-            </motion.div>
-          )}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6 }}
+            className="flex items-center space-x-2"
+          >
+            <Checkbox
+              id="fixed"
+              checked={formData.isFixed}
+              onCheckedChange={(checked) =>
+                setFormData({ ...formData, isFixed: checked as boolean })
+              }
+            />
+            <label htmlFor="fixed" className="text-sm text-foreground cursor-pointer">
+              {formData.type === "income"
+                ? "Entrée fixe (récurrente)"
+                : "Dépense fixe (récurrente)"}
+            </label>
+          </motion.div>
 
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7 }}>
             <Button type="submit" disabled={isLoading} className="w-full h-12 btn-primary">
