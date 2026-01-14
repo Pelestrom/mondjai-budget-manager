@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef } from 'react';
-import { format, startOfMonth, startOfWeek, endOfMonth, endOfWeek, isPast, isWithinInterval } from 'date-fns';
+import { format, startOfMonth, startOfWeek, endOfMonth, endOfWeek, isPast, isWithinInterval, differenceInHours } from 'date-fns';
 import { useAuth } from './useAuth';
 import { useBudgets } from './useBudgets';
 import { useCategories } from './useCategories';
@@ -8,6 +8,9 @@ import { useSettings } from './useSettings';
 import { useTransactions } from './useTransactions';
 
 type NotifType = 'info' | 'warning' | 'success' | 'error';
+
+// Cooldown in hours for warning/error notifications to prevent spam
+const ALERT_COOLDOWN_HOURS = 12;
 
 export const useBudgetNotificationsDB = () => {
   const { user } = useAuth();
@@ -50,6 +53,15 @@ export const useBudgetNotificationsDB = () => {
 
   const alreadySent = (key: string) => Boolean(lastChecked.current[key]);
 
+  // Check if a notification was sent within the cooldown period (for warning/error types)
+  const isWithinCooldown = (key: string) => {
+    const lastSentTime = lastChecked.current[key];
+    if (!lastSentTime) return false;
+    
+    const hoursSinceLastSent = differenceInHours(new Date(), new Date(lastSentTime));
+    return hoursSinceLastSent < ALERT_COOLDOWN_HOURS;
+  };
+
   const getBudgetPeriod = (period: string, startDate?: string, endDate?: string) => {
     const now = new Date();
     if (period === 'weekly') {
@@ -80,6 +92,25 @@ export const useBudgetNotificationsDB = () => {
     });
   };
 
+  // Check if a similar notification (same title) was already sent recently (within 12h) for warning/error types
+  const hasSimilarRecentNotification = (params: {
+    type: NotifType;
+    title: string;
+  }) => {
+    const { type, title } = params;
+    
+    // Only apply cooldown for warning and error types
+    if (type !== 'warning' && type !== 'error') return false;
+    
+    return notifications.some((n) => {
+      if (n.type !== type) return false;
+      if (n.title !== title) return false;
+      
+      const hoursSinceCreated = differenceInHours(new Date(), new Date(n.created_at));
+      return hoursSinceCreated < ALERT_COOLDOWN_HOURS;
+    });
+  };
+
   const notifyOnce = (params: {
     key: string;
     type: NotifType;
@@ -90,7 +121,20 @@ export const useBudgetNotificationsDB = () => {
   }) => {
     const { key, type, title, message, start, end } = params;
 
-    if (alreadySent(key)) return;
+    // For warning/error types, check cooldown first
+    if ((type === 'warning' || type === 'error') && isWithinCooldown(key)) {
+      return;
+    }
+
+    if (alreadySent(key) && type !== 'warning' && type !== 'error') {
+      return;
+    }
+
+    // Check if a similar notification exists in DB recently (within 12h) for warning/error
+    if (!notificationsLoading && hasSimilarRecentNotification({ type, title })) {
+      markSent(key); // Mark as sent to sync local storage
+      return;
+    }
 
     // If we already have it in DB for this period, consider it "sent" to prevent duplicates on navigation.
     if (start && end && !notificationsLoading) {
@@ -250,4 +294,3 @@ export const useBudgetNotificationsDB = () => {
     addNotification,
   ]);
 };
-
