@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Bell, Check, X, Trash2, ArrowLeft, AlertTriangle, Lightbulb, CheckCircle, XCircle, Square, CheckSquare, RotateCcw } from "lucide-react";
+import { Bell, Check, X, Trash2, ArrowLeft, TriangleAlert as AlertTriangle, Lightbulb, CircleCheck as CheckCircle, Circle as XCircle, Square, SquareCheck as CheckSquare, RotateCcw } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useNotifications } from "@/hooks/useNotifications";
