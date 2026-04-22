@@ -8,8 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { useTransactions } from "@/hooks/useTransactions";
-import { useCategories } from "@/hooks/useCategories";
+import { useTransactionStore } from "@/store/transactionStore";
+import { useCategoryStore } from "@/store/categoryStore";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
@@ -20,8 +20,9 @@ import * as LucideIcons from "lucide-react";
 const AddTransaction = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { transactions, addTransaction } = useTransactions();
-  const { categories } = useCategories();
+  const addTransaction = useTransactionStore((state) => state.addTransaction);
+  const transactions = useTransactionStore((state) => state.transactions);
+  const categories = useCategoryStore((state) => state.categories);
 
   const typeFromUrl = searchParams.get("type");
   const initialType = typeFromUrl === "income" ? "income" : typeFromUrl === "expense" ? "expense" : "expense";
@@ -35,12 +36,13 @@ const AddTransaction = () => {
     date: new Date(),
     isFixed: false,
   });
-  const [isLoading, setIsLoading] = useState(false);
 
+  // Calculate available balance (total income - total expenses)
   const availableBalance = transactions.reduce((acc, t) => {
-    return t.type === "income" ? acc + Number(t.amount) : acc - Number(t.amount);
+    return t.type === "income" ? acc + t.amount : acc - t.amount;
   }, 0);
 
+  // Update type when URL param changes
   useEffect(() => {
     const newType = searchParams.get("type");
     if (newType === "income" || newType === "expense") {
@@ -58,7 +60,7 @@ const AddTransaction = () => {
     return <LucideIcons.Package className="w-4 h-4" />;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!formData.amount || parseFloat(formData.amount) <= 0) {
@@ -73,29 +75,24 @@ const AddTransaction = () => {
 
     const amount = parseFloat(formData.amount);
 
+    // Check if expense exceeds available balance
     if (formData.type === "expense" && amount > availableBalance) {
       toast.error(`Solde insuffisant. Disponible: ${availableBalance.toLocaleString()}`);
       return;
     }
 
-    setIsLoading(true);
-    try {
-      await addTransaction({
-        amount,
-        type: formData.type,
-        category: formData.category,
-        subcategory: formData.subcategory || undefined,
-        note: formData.note || undefined,
-        date: format(formData.date, 'yyyy-MM-dd'),
-        is_fixed: formData.isFixed,
-      });
-      toast.success("Transaction ajoutée");
-      navigate("/");
-    } catch (error) {
-      toast.error("Erreur lors de l'ajout");
-    } finally {
-      setIsLoading(false);
-    }
+    addTransaction({
+      amount,
+      type: formData.type,
+      category: formData.category,
+      subcategory: formData.subcategory || undefined,
+      note: formData.note || undefined,
+      date: formData.date.toISOString(),
+      isFixed: formData.isFixed,
+    });
+
+    toast.success("Transaction ajoutée");
+    navigate("/");
   };
 
   return (
@@ -106,37 +103,63 @@ const AddTransaction = () => {
           animate={{ opacity: 1, y: 0 }}
           className="flex items-center gap-4"
         >
-          <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="shrink-0">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate(-1)}
+            className="shrink-0"
+          >
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Nouvelle transaction</h1>
-            <p className="text-sm text-muted-foreground">Enregistrez vos revenus et dépenses</p>
+            <h1 className="text-2xl font-bold text-foreground">
+              Nouvelle transaction
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              Enregistrez vos revenus et dépenses
+            </p>
           </div>
         </motion.div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="space-y-2">
+          {/* Amount */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="space-y-2"
+          >
             <label className="text-sm font-medium">Montant</label>
             <Input
               type="number"
               step="0.01"
               value={formData.amount}
-              onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, amount: e.target.value })
+              }
               placeholder="0"
               className="text-2xl font-bold h-14"
               autoFocus
             />
           </motion.div>
 
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="space-y-2">
+          {/* Type */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="space-y-2"
+          >
             <label className="text-sm font-medium">Type</label>
             <div className="grid grid-cols-2 gap-3">
               <Button
                 type="button"
                 variant={formData.type === "income" ? "default" : "outline"}
                 onClick={() => setFormData({ ...formData, type: "income" })}
-                className={cn("h-12", formData.type === "income" && "bg-success hover:bg-success/90")}
+                className={cn(
+                  "h-12",
+                  formData.type === "income" && "bg-success hover:bg-success/90"
+                )}
               >
                 Entrée
               </Button>
@@ -144,14 +167,23 @@ const AddTransaction = () => {
                 type="button"
                 variant={formData.type === "expense" ? "default" : "outline"}
                 onClick={() => setFormData({ ...formData, type: "expense" })}
-                className={cn("h-12", formData.type === "expense" && "bg-danger hover:bg-danger/90")}
+                className={cn(
+                  "h-12",
+                  formData.type === "expense" && "bg-danger hover:bg-danger/90"
+                )}
               >
                 Dépense
               </Button>
             </div>
           </motion.div>
 
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="space-y-2">
+          {/* Category */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="space-y-2"
+          >
             <label className="text-sm font-medium">Catégorie</label>
             <Select
               value={formData.category}
@@ -170,7 +202,9 @@ const AddTransaction = () => {
                 {categories.map((cat) => (
                   <SelectItem key={cat.id} value={cat.name}>
                     <span className="flex items-center gap-2">
-                      <span className="w-5 h-5 flex items-center justify-center">{getCategoryIcon(cat.icon)}</span>
+                      <span className="w-5 h-5 flex items-center justify-center">
+                        {getCategoryIcon(cat.icon)}
+                      </span>
                       {cat.name}
                     </span>
                   </SelectItem>
@@ -187,23 +221,42 @@ const AddTransaction = () => {
             </Select>
           </motion.div>
 
-          {selectedCategory?.subcategories && selectedCategory.subcategories.length > 0 && (
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-2">
-              <label className="text-sm font-medium">Sous-catégorie</label>
-              <Select value={formData.subcategory} onValueChange={(value) => setFormData({ ...formData, subcategory: value })}>
-                <SelectTrigger className="h-12">
-                  <SelectValue placeholder="Optionnel" />
-                </SelectTrigger>
-                <SelectContent>
-                  {selectedCategory.subcategories.map((sub) => (
-                    <SelectItem key={sub} value={sub}>{sub}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </motion.div>
-          )}
+          {/* Subcategory */}
+          {selectedCategory?.subcategories &&
+            selectedCategory.subcategories.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="space-y-2"
+              >
+                <label className="text-sm font-medium">Sous-catégorie</label>
+                <Select
+                  value={formData.subcategory}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, subcategory: value })
+                  }
+                >
+                  <SelectTrigger className="h-12">
+                    <SelectValue placeholder="Optionnel" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {selectedCategory.subcategories.map((sub) => (
+                      <SelectItem key={sub} value={sub}>
+                        {sub}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </motion.div>
+            )}
 
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="space-y-2">
+          {/* Note */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="space-y-2"
+          >
             <label className="text-sm font-medium">Note (optionnel)</label>
             <Textarea
               value={formData.note}
@@ -213,7 +266,13 @@ const AddTransaction = () => {
             />
           </motion.div>
 
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }} className="space-y-2">
+          {/* Date */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+            className="space-y-2"
+          >
             <label className="text-sm font-medium">Date</label>
             <Popover>
               <PopoverTrigger asChild>
@@ -234,29 +293,37 @@ const AddTransaction = () => {
             </Popover>
           </motion.div>
 
+          {/* Fixed Expense */}
+          {formData.type === "expense" && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6 }}
+              className="flex items-center space-x-2"
+            >
+              <Checkbox
+                id="fixed"
+                checked={formData.isFixed}
+                onCheckedChange={(checked) =>
+                  setFormData({ ...formData, isFixed: checked as boolean })
+                }
+              />
+              <label
+                htmlFor="fixed"
+                className="text-sm text-foreground cursor-pointer"
+              >
+                Dépense fixe (récurrente)
+              </label>
+            </motion.div>
+          )}
+
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6 }}
-            className="flex items-center space-x-2"
+            transition={{ delay: 0.7 }}
           >
-            <Checkbox
-              id="fixed"
-              checked={formData.isFixed}
-              onCheckedChange={(checked) =>
-                setFormData({ ...formData, isFixed: checked as boolean })
-              }
-            />
-            <label htmlFor="fixed" className="text-sm text-foreground cursor-pointer">
-              {formData.type === "income"
-                ? "Entrée fixe (récurrente)"
-                : "Dépense fixe (récurrente)"}
-            </label>
-          </motion.div>
-
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7 }}>
-            <Button type="submit" disabled={isLoading} className="w-full h-12 btn-primary">
-              {isLoading ? "Enregistrement..." : "Enregistrer la transaction"}
+            <Button type="submit" className="w-full h-12 btn-primary">
+              Enregistrer la transaction
             </Button>
           </motion.div>
         </form>

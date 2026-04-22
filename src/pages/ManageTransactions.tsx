@@ -1,29 +1,26 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Edit2, Trash2, Search, ArrowUpCircle, ArrowDownCircle, CheckSquare, Square, RotateCcw } from "lucide-react";
+import { ArrowLeft, Edit2, Trash2, Search, ArrowUpCircle, ArrowDownCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { useTransactions, Transaction } from "@/hooks/useTransactions";
-import { useCategories } from "@/hooks/useCategories";
-import { useAuth } from "@/hooks/useAuth";
+import { useTransactionStore, Transaction } from "@/store/transactionStore";
+import { useCategoryStore } from "@/store/categoryStore";
+import { useAuthStore } from "@/store/authStore";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import * as LucideIcons from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Checkbox } from "@/components/ui/checkbox";
 
 const ManageTransactions = () => {
   const navigate = useNavigate();
-  const { transactions, updateTransaction, deleteTransaction, isLoading: transactionsLoading } = useTransactions();
-  const { categories, isLoading: categoriesLoading } = useCategories();
-  const { profile } = useAuth();
+  const { transactions, updateTransaction, deleteTransaction } = useTransactionStore();
+  const categories = useCategoryStore((state) => state.categories);
+  const user = useAuthStore((state) => state.user);
   
   const [search, setSearch] = useState("");
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
@@ -33,12 +30,6 @@ const ManageTransactions = () => {
     category: "",
     note: "",
   });
-  
-  // Selection state
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [selectionMode, setSelectionMode] = useState(false);
-  const [showResetDialog, setShowResetDialog] = useState(false);
-  const [showDeleteSelectedDialog, setShowDeleteSelectedDialog] = useState(false);
 
   const filteredTransactions = transactions.filter((t) =>
     t.category.toLowerCase().includes(search.toLowerCase()) ||
@@ -74,102 +65,26 @@ const ManageTransactions = () => {
     });
   };
 
-  const handleSaveEdit = async () => {
+  const handleSaveEdit = () => {
     if (!editingTransaction) return;
     
-    try {
-      await updateTransaction({
-        id: editingTransaction.id,
-        updates: {
-          amount: parseFloat(editFormData.amount),
-          type: editFormData.type,
-          category: editFormData.category,
-          note: editFormData.note,
-        },
-      });
-      
-      toast.success("Transaction modifiée");
-      setEditingTransaction(null);
-    } catch (error) {
-      toast.error("Une erreur est survenue");
-    }
+    updateTransaction(editingTransaction.id, {
+      amount: parseFloat(editFormData.amount),
+      type: editFormData.type,
+      category: editFormData.category,
+      note: editFormData.note,
+    });
+    
+    toast.success("Transaction modifiée");
+    setEditingTransaction(null);
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = (id: string) => {
     if (confirm("Êtes-vous sûr de vouloir supprimer cette transaction?")) {
-      try {
-        await deleteTransaction(id);
-        toast.success("Transaction supprimée");
-      } catch (error) {
-        toast.error("Une erreur est survenue");
-      }
+      deleteTransaction(id);
+      toast.success("Transaction supprimée");
     }
   };
-
-  // Selection handlers
-  const toggleSelection = (id: string) => {
-    const newSelection = new Set(selectedIds);
-    if (newSelection.has(id)) {
-      newSelection.delete(id);
-    } else {
-      newSelection.add(id);
-    }
-    setSelectedIds(newSelection);
-  };
-
-  const selectAll = () => {
-    setSelectedIds(new Set(sortedTransactions.map(t => t.id)));
-  };
-
-  const deselectAll = () => {
-    setSelectedIds(new Set());
-  };
-
-  const handleDeleteSelected = async () => {
-    try {
-      await Promise.all(Array.from(selectedIds).map(id => deleteTransaction(id)));
-      toast.success(`${selectedIds.size} transaction(s) supprimée(s)`);
-      setSelectedIds(new Set());
-      setSelectionMode(false);
-    } catch (error) {
-      toast.error("Une erreur est survenue");
-    }
-    setShowDeleteSelectedDialog(false);
-  };
-
-  const handleResetAll = async () => {
-    try {
-      await Promise.all(transactions.map(t => deleteTransaction(t.id)));
-      toast.success("Toutes les transactions ont été supprimées");
-      setSelectedIds(new Set());
-      setSelectionMode(false);
-    } catch (error) {
-      toast.error("Une erreur est survenue");
-    }
-    setShowResetDialog(false);
-  };
-
-  const isLoading = transactionsLoading || categoriesLoading;
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen pb-8 pt-20">
-        <div className="p-6 space-y-6">
-          <div className="flex items-center gap-4">
-            <Skeleton className="h-10 w-10" />
-            <div>
-              <Skeleton className="h-8 w-48" />
-              <Skeleton className="h-4 w-32 mt-1" />
-            </div>
-          </div>
-          <Skeleton className="h-10 w-full" />
-          {[1, 2, 3, 4].map((i) => (
-            <Skeleton key={i} className="h-20 w-full" />
-          ))}
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen pb-8 pt-20">
@@ -187,65 +102,12 @@ const ManageTransactions = () => {
           >
             <ArrowLeft className="w-5 h-5" />
           </Button>
-          <div className="flex-1">
+          <div>
             <h1 className="text-2xl font-bold text-foreground">Gérer mes transactions</h1>
             <p className="text-sm text-muted-foreground">
               Modifier ou supprimer vos entrées/dépenses
             </p>
           </div>
-        </motion.div>
-
-        {/* Action Bar */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.05 }}
-          className="flex flex-wrap gap-2"
-        >
-          <Button
-            variant={selectionMode ? "default" : "outline"}
-            size="sm"
-            onClick={() => {
-              setSelectionMode(!selectionMode);
-              if (selectionMode) setSelectedIds(new Set());
-            }}
-          >
-            {selectionMode ? <CheckSquare className="w-4 h-4 mr-2" /> : <Square className="w-4 h-4 mr-2" />}
-            {selectionMode ? "Annuler" : "Sélectionner"}
-          </Button>
-          
-          {selectionMode && (
-            <>
-              <Button variant="outline" size="sm" onClick={selectAll}>
-                Tout sélectionner
-              </Button>
-              <Button variant="outline" size="sm" onClick={deselectAll}>
-                Désélectionner
-              </Button>
-              {selectedIds.size > 0 && (
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={() => setShowDeleteSelectedDialog(true)}
-                >
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Supprimer ({selectedIds.size})
-                </Button>
-              )}
-            </>
-          )}
-          
-          {transactions.length > 0 && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="text-danger border-danger hover:bg-danger/10"
-              onClick={() => setShowResetDialog(true)}
-            >
-              <RotateCcw className="w-4 h-4 mr-2" />
-              Réinitialiser tout
-            </Button>
-          )}
         </motion.div>
 
         {/* Search */}
@@ -276,7 +138,7 @@ const ManageTransactions = () => {
               <p className="text-muted-foreground">Aucune transaction</p>
             </Card>
           ) : (
-            <ScrollArea className="h-[calc(100vh-320px)]">
+            <ScrollArea className="h-[calc(100vh-250px)]">
               <div className="space-y-3 pr-4">
                 {sortedTransactions.map((transaction, index) => (
                   <motion.div
@@ -285,18 +147,8 @@ const ManageTransactions = () => {
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: index * 0.03 }}
                   >
-                    <Card 
-                      className={`p-4 card-gradient ${selectedIds.has(transaction.id) ? 'ring-2 ring-primary' : ''}`}
-                      onClick={() => selectionMode && toggleSelection(transaction.id)}
-                    >
+                    <Card className="p-4 card-gradient">
                       <div className="flex items-center gap-3">
-                        {selectionMode && (
-                          <Checkbox
-                            checked={selectedIds.has(transaction.id)}
-                            onCheckedChange={() => toggleSelection(transaction.id)}
-                            className="shrink-0"
-                          />
-                        )}
                         <div
                           className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
                           style={{
@@ -322,29 +174,27 @@ const ManageTransactions = () => {
                         </div>
                         <div className="text-right shrink-0">
                           <p className={`font-bold ${transaction.type === "income" ? "text-success" : "text-danger"}`}>
-                            {transaction.type === "income" ? "+" : "-"}{transaction.amount.toLocaleString()} {profile?.currency}
+                            {transaction.type === "income" ? "+" : "-"}{transaction.amount.toLocaleString()} {user?.currency}
                           </p>
                         </div>
-                        {!selectionMode && (
-                          <div className="flex gap-1 shrink-0">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8"
-                              onClick={() => handleEdit(transaction)}
-                            >
-                              <Edit2 className="w-4 h-4 text-primary" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8"
-                              onClick={() => handleDelete(transaction.id)}
-                            >
-                              <Trash2 className="w-4 h-4 text-danger" />
-                            </Button>
-                          </div>
-                        )}
+                        <div className="flex gap-1 shrink-0">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => handleEdit(transaction)}
+                          >
+                            <Edit2 className="w-4 h-4 text-primary" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => handleDelete(transaction.id)}
+                          >
+                            <Trash2 className="w-4 h-4 text-danger" />
+                          </Button>
+                        </div>
                       </div>
                     </Card>
                   </motion.div>
@@ -419,42 +269,6 @@ const ManageTransactions = () => {
           </div>
         </DialogContent>
       </Dialog>
-
-      {/* Delete Selected Dialog */}
-      <AlertDialog open={showDeleteSelectedDialog} onOpenChange={setShowDeleteSelectedDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Supprimer les transactions sélectionnées?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Vous allez supprimer {selectedIds.size} transaction(s). Cette action est irréversible.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Annuler</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteSelected} className="bg-danger hover:bg-danger/90">
-              Supprimer
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Reset All Dialog */}
-      <AlertDialog open={showResetDialog} onOpenChange={setShowResetDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Réinitialiser toutes les transactions?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Toutes vos transactions ({transactions.length}) seront définitivement supprimées. Cette action est irréversible.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Annuler</AlertDialogCancel>
-            <AlertDialogAction onClick={handleResetAll} className="bg-danger hover:bg-danger/90">
-              Réinitialiser
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 };

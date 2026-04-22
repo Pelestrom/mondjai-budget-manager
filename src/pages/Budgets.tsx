@@ -8,27 +8,26 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { useBudgets } from "@/hooks/useBudgets";
-import { useCategories } from "@/hooks/useCategories";
-import { useTransactions } from "@/hooks/useTransactions";
-import { useAuth } from "@/hooks/useAuth";
-import { useSettings } from "@/hooks/useSettings";
-import { useNotifications } from "@/hooks/useNotifications";
+import { useBudgetStore } from "@/store/budgetStore";
+import { useCategoryStore } from "@/store/categoryStore";
+import { useTransactionStore } from "@/store/transactionStore";
+import { useAuthStore } from "@/store/authStore";
+import { useSettingsStore } from "@/store/settingsStore";
+import { useNotificationStore } from "@/store/notificationStore";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { format, startOfWeek, startOfMonth, endOfWeek, endOfMonth, differenceInDays, isWithinInterval } from "date-fns";
 import { fr } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import * as LucideIcons from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
 
 const Budgets = () => {
-  const { profile } = useAuth();
-  const { budgets, globalBudget, addBudget, deleteBudget, setGlobalBudget, resetAllBudgets, isLoading: budgetsLoading } = useBudgets();
-  const { categories, isLoading: categoriesLoading } = useCategories();
-  const { transactions, isLoading: transactionsLoading } = useTransactions();
-  const { settings, isLoading: settingsLoading } = useSettings();
-  const { addNotification } = useNotifications();
+  const user = useAuthStore((state) => state.user);
+  const { budgets, globalBudget, addBudget, deleteBudget, setGlobalBudget, resetAllBudgets } = useBudgetStore();
+  const categories = useCategoryStore((state) => state.categories);
+  const transactions = useTransactionStore((state) => state.transactions);
+  const smartBarEnabled = useSettingsStore((state) => state.smartBarEnabled);
+  const addNotification = useNotificationStore((state) => state.addNotification);
   
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isGlobalDialogOpen, setIsGlobalDialogOpen] = useState(false);
@@ -61,7 +60,7 @@ const Budgets = () => {
   const globalBudgetStatus = useMemo(() => {
     if (!globalBudget) return null;
     
-    const { start, end } = getBudgetPeriod(globalBudget.period, globalBudget.start_date, globalBudget.end_date);
+    const { start, end } = getBudgetPeriod(globalBudget.period, globalBudget.startDate, globalBudget.endDate);
     const totalExpenses = transactions
       .filter((t) => t.type === "expense" && isWithinInterval(new Date(t.date), { start, end }))
       .reduce((sum, t) => sum + t.amount, 0);
@@ -83,8 +82,8 @@ const Budgets = () => {
 
   // Calculate category budget status
   const getBudgetStatus = (budget: typeof budgets[0]) => {
-    const category = categories.find((c) => c.id === budget.category_id);
-    const { start, end } = getBudgetPeriod(budget.period, budget.start_date, budget.end_date);
+    const category = categories.find((c) => c.id === budget.categoryId);
+    const { start, end } = getBudgetPeriod(budget.period, budget.startDate, budget.endDate);
     
     const spent = transactions
       .filter(
@@ -115,7 +114,7 @@ const Budgets = () => {
     return globalBudget.amount - totalCategoryBudgets;
   }, [globalBudget, totalCategoryBudgets]);
 
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
     if (!formData.amount || parseFloat(formData.amount) <= 0) {
       toast.error("Veuillez entrer un montant valide");
       return;
@@ -135,47 +134,38 @@ const Budgets = () => {
 
     // Check if the new category budget would exceed the global budget
     if (newAmount > availableForCategoryBudget) {
-      toast.error(`Montant trop élevé. Maximum disponible: ${availableForCategoryBudget.toLocaleString()} ${profile?.currency}`);
+      toast.error(`Montant trop élevé. Maximum disponible: ${availableForCategoryBudget.toLocaleString()} ${user?.currency}`);
       return;
     }
 
-    try {
-      await addBudget({
-        category_id: formData.categoryId,
-        amount: newAmount,
-        period: formData.period,
-        start_date: formData.period === "custom" ? formData.startDate.toISOString().split('T')[0] : undefined,
-        end_date: formData.period === "custom" ? formData.endDate.toISOString().split('T')[0] : undefined,
-        is_global: false,
-      });
+    addBudget({
+      categoryId: formData.categoryId,
+      amount: newAmount,
+      period: formData.period,
+      startDate: formData.period === "custom" ? formData.startDate.toISOString() : undefined,
+      endDate: formData.period === "custom" ? formData.endDate.toISOString() : undefined,
+    });
 
-      toast.success("Budget ajouté");
-      setIsDialogOpen(false);
-      setFormData({ categoryId: "", amount: "", period: "monthly", startDate: new Date(), endDate: new Date() });
-    } catch (error) {
-      toast.error("Une erreur est survenue");
-    }
+    toast.success("Budget ajouté");
+    setIsDialogOpen(false);
+    setFormData({ categoryId: "", amount: "", period: "monthly", startDate: new Date(), endDate: new Date() });
   };
 
-  const handleGlobalSubmit = async () => {
+  const handleGlobalSubmit = () => {
     if (!globalFormData.amount || parseFloat(globalFormData.amount) <= 0) {
       toast.error("Veuillez entrer un montant valide");
       return;
     }
 
-    try {
-      await setGlobalBudget({
-        amount: parseFloat(globalFormData.amount),
-        period: globalFormData.period,
-        start_date: globalFormData.period === "custom" ? globalFormData.startDate.toISOString().split('T')[0] : undefined,
-        end_date: globalFormData.period === "custom" ? globalFormData.endDate.toISOString().split('T')[0] : undefined,
-      });
+    setGlobalBudget({
+      amount: parseFloat(globalFormData.amount),
+      period: globalFormData.period,
+      startDate: globalFormData.period === "custom" ? globalFormData.startDate.toISOString() : undefined,
+      endDate: globalFormData.period === "custom" ? globalFormData.endDate.toISOString() : undefined,
+    });
 
-      toast.success("Budget global mis à jour");
-      setIsGlobalDialogOpen(false);
-    } catch (error) {
-      toast.error("Une erreur est survenue");
-    }
+    toast.success("Budget global mis à jour");
+    setIsGlobalDialogOpen(false);
   };
 
   const getCategoryIcon = (categoryId: string) => {
@@ -187,51 +177,17 @@ const Budgets = () => {
     return <LucideIcons.Package className="w-5 h-5" />;
   };
 
-  const handleResetAllBudgets = async () => {
+  const handleResetAllBudgets = () => {
     if (confirm("Êtes-vous sûr de vouloir réinitialiser tous les budgets? Cette action est irréversible.")) {
-      try {
-        await resetAllBudgets();
-        toast.success("Tous les budgets ont été réinitialisés");
-        await addNotification({
-          title: "Budgets réinitialisés",
-          message: "Tous vos budgets ont été supprimés. Vous pouvez maintenant en créer de nouveaux.",
-          type: "info",
-        });
-      } catch (error) {
-        toast.error("Une erreur est survenue");
-      }
+      resetAllBudgets();
+      toast.success("Tous les budgets ont été réinitialisés");
+      addNotification({
+        title: "Budgets réinitialisés",
+        message: "Tous vos budgets ont été supprimés. Vous pouvez maintenant en créer de nouveaux.",
+        type: "info",
+      });
     }
   };
-
-  const handleDeleteBudget = async (id: string) => {
-    try {
-      await deleteBudget(id);
-      toast.success("Budget supprimé");
-    } catch (error) {
-      toast.error("Une erreur est survenue");
-    }
-  };
-
-  const isLoading = budgetsLoading || categoriesLoading || transactionsLoading || settingsLoading;
-  const smartBarEnabled = settings.smart_bar_enabled;
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen pb-24 pt-20">
-        <div className="p-6 space-y-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <Skeleton className="h-8 w-24" />
-              <Skeleton className="h-4 w-40 mt-1" />
-            </div>
-          </div>
-          <Skeleton className="h-48 w-full" />
-          <Skeleton className="h-32 w-full" />
-          <Skeleton className="h-32 w-full" />
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen pb-24 pt-20">
@@ -375,7 +331,7 @@ const Budgets = () => {
               <>
                 <div className="space-y-3">
                   <div className="flex justify-between text-sm">
-                    <span>Dépensé: {globalBudgetStatus.spent.toLocaleString()} {profile?.currency}</span>
+                    <span>Dépensé: {globalBudgetStatus.spent.toLocaleString()} {user?.currency}</span>
                     <span className={globalBudgetStatus.status === "exceeded" ? "text-danger" : globalBudgetStatus.status === "warning" ? "text-warning" : "text-success"}>
                       {globalBudgetStatus.percentage.toFixed(0)}%
                     </span>
@@ -386,10 +342,10 @@ const Budgets = () => {
                   />
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">
-                      Reste: {globalBudgetStatus.remaining.toLocaleString()} {profile?.currency}
+                      Reste: {globalBudgetStatus.remaining.toLocaleString()} {user?.currency}
                     </span>
                     <span className="font-medium">
-                      sur {globalBudget.amount.toLocaleString()} {profile?.currency}
+                      sur {globalBudget.amount.toLocaleString()} {user?.currency}
                     </span>
                   </div>
                 </div>
@@ -406,7 +362,7 @@ const Budgets = () => {
                       <span className="text-sm font-medium">Barre Intelligente</span>
                     </div>
                     <p className="text-2xl font-bold text-primary">
-                      {globalBudgetStatus.dailyBudget.toLocaleString(undefined, { maximumFractionDigits: 0 })} {profile?.currency}
+                      {globalBudgetStatus.dailyBudget.toLocaleString(undefined, { maximumFractionDigits: 0 })} {user?.currency}
                     </p>
                     <p className="text-xs text-muted-foreground">
                       à dépenser par jour ({globalBudgetStatus.daysLeft} jours restants)
@@ -425,7 +381,7 @@ const Budgets = () => {
                     <div>
                       <p className="text-sm font-medium text-danger">Budget dépassé!</p>
                       <p className="text-xs text-muted-foreground">
-                        Vous avez dépassé votre budget de {Math.abs(globalBudgetStatus.remaining).toLocaleString()} {profile?.currency}
+                        Vous avez dépassé votre budget de {Math.abs(globalBudgetStatus.remaining).toLocaleString()} {user?.currency}
                       </p>
                     </div>
                   </motion.div>
@@ -486,11 +442,6 @@ const Budgets = () => {
                       placeholder="0"
                       className="mt-1"
                     />
-                    {globalBudget && (
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Maximum disponible: {availableForCategoryBudget.toLocaleString()} {profile?.currency}
-                      </p>
-                    )}
                   </div>
                   <div>
                     <label className="text-sm font-medium">Période</label>
@@ -570,7 +521,7 @@ const Budgets = () => {
           ) : (
             <div className="space-y-3">
               {budgets.map((budget, index) => {
-                const category = categories.find((c) => c.id === budget.category_id);
+                const category = categories.find((c) => c.id === budget.categoryId);
                 const status = getBudgetStatus(budget);
 
                 return (
@@ -589,7 +540,7 @@ const Budgets = () => {
                               style={{ backgroundColor: category?.color ? `${category.color}20` : "hsl(var(--primary) / 0.1)" }}
                             >
                               <span style={{ color: category?.color || "hsl(var(--primary))" }}>
-                                {getCategoryIcon(budget.category_id || "")}
+                                {getCategoryIcon(budget.categoryId || "")}
                               </span>
                             </div>
                             <div>
@@ -615,7 +566,7 @@ const Budgets = () => {
                               variant="ghost"
                               size="icon"
                               className="h-8 w-8"
-                              onClick={() => handleDeleteBudget(budget.id)}
+                              onClick={() => deleteBudget(budget.id)}
                             >
                               <Trash2 className="w-4 h-4 text-muted-foreground" />
                             </Button>
@@ -629,10 +580,10 @@ const Budgets = () => {
 
                         <div className="flex justify-between text-sm">
                           <span className="text-muted-foreground">
-                            {status.spent.toLocaleString()} {profile?.currency}
+                            {status.spent.toLocaleString()} {user?.currency}
                           </span>
                           <span className="text-muted-foreground">
-                            sur {budget.amount.toLocaleString()} {profile?.currency}
+                            sur {budget.amount.toLocaleString()} {user?.currency}
                           </span>
                         </div>
                       </div>

@@ -5,22 +5,21 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { useTransactions } from "@/hooks/useTransactions";
-import { useCategories } from "@/hooks/useCategories";
-import { useAuth } from "@/hooks/useAuth";
+import { useTransactionStore } from "@/store/transactionStore";
+import { useCategoryStore } from "@/store/categoryStore";
+import { useAuthStore } from "@/store/authStore";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 import * as LucideIcons from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
 
 const History = () => {
   const navigate = useNavigate();
-  const { profile } = useAuth();
-  const { transactions, isLoading: transactionsLoading } = useTransactions();
-  const { categories, isLoading: categoriesLoading } = useCategories();
+  const user = useAuthStore((state) => state.user);
+  const { transactions } = useTransactionStore();
+  const categories = useCategoryStore((state) => state.categories);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterType, setFilterType] = useState<"all" | "income" | "expense">("all");
   const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>({});
@@ -51,28 +50,6 @@ const History = () => {
     }
     return <LucideIcons.Package className="w-5 h-5" />;
   };
-
-  const isLoading = transactionsLoading || categoriesLoading;
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen pb-8 pt-20">
-        <div className="p-6 space-y-6">
-          <div className="flex items-center gap-4">
-            <Skeleton className="h-10 w-10" />
-            <div>
-              <Skeleton className="h-8 w-32" />
-              <Skeleton className="h-4 w-24 mt-1" />
-            </div>
-          </div>
-          <Skeleton className="h-10 w-full" />
-          {[1, 2, 3, 4].map((i) => (
-            <Skeleton key={i} className="h-24 w-full" />
-          ))}
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen pb-8 pt-20">
@@ -221,7 +198,7 @@ const History = () => {
                           <h3 className="font-semibold text-foreground">
                             {transaction.category}
                           </h3>
-                          {transaction.is_fixed && (
+                          {transaction.isFixed && (
                             <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full">
                               Fixe
                             </span>
@@ -257,7 +234,7 @@ const History = () => {
                         {transaction.amount.toLocaleString()}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {profile?.currency}
+                        {user?.currency}
                       </p>
                     </div>
                   </div>
