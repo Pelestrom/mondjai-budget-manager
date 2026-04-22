@@ -162,59 +162,50 @@ const Notifications = () => {
           transition={{ delay: 0.05 }}
           className="flex flex-wrap gap-2"
         >
-          <Button
-            variant={selectionMode ? "default" : "outline"}
-            size="sm"
+          <button
             onClick={() => {
               setSelectionMode(!selectionMode);
               if (selectionMode) setSelectedIds(new Set());
             }}
+            className="inline-flex items-center justify-center h-10 px-6 rounded-full bg-card border border-border hover:bg-muted transition-colors"
           >
-            {selectionMode ? <CheckSquare className="w-4 h-4 mr-2" /> : <Square className="w-4 h-4 mr-2" />}
-            {selectionMode ? "Annuler" : "Sélectionner"}
-          </Button>
-          
+            {selectionMode ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}
+          </button>
+
           {selectionMode && (
             <>
-              <Button variant="outline" size="sm" onClick={selectAll}>
+              <button onClick={selectAll} className="inline-flex items-center justify-center h-10 px-6 rounded-full bg-card border border-border hover:bg-muted transition-colors text-sm font-medium">
                 Tout sélectionner
-              </Button>
-              <Button variant="outline" size="sm" onClick={deselectAll}>
+              </button>
+              <button onClick={deselectAll} className="inline-flex items-center justify-center h-10 px-6 rounded-full bg-card border border-border hover:bg-muted transition-colors text-sm font-medium">
                 Désélectionner
-              </Button>
+              </button>
               {selectedIds.size > 0 && (
                 <>
-                  <Button
-                    variant="outline"
-                    size="sm"
+                  <button
                     onClick={handleMarkSelectedAsRead}
+                    className="inline-flex items-center justify-center h-10 px-6 rounded-full bg-card border border-border hover:bg-muted transition-colors"
                   >
-                    <Check className="w-4 h-4 mr-2" />
-                    Marquer lu ({selectedIds.size})
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    size="sm"
+                    <Check className="w-4 h-4" />
+                  </button>
+                  <button
                     onClick={() => setShowDeleteSelectedDialog(true)}
+                    className="inline-flex items-center justify-center h-10 px-6 rounded-full bg-danger/10 border border-danger/30 hover:bg-danger/20 transition-colors"
                   >
-                    <Trash2 className="w-4 h-4 mr-2" />
-                    Supprimer ({selectedIds.size})
-                  </Button>
+                    <Trash2 className="w-4 h-4 text-danger" />
+                  </button>
                 </>
               )}
             </>
           )}
-          
+
           {notifications.length > 0 && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="text-danger border-danger hover:bg-danger/10"
+            <button
+              className="inline-flex items-center justify-center h-10 px-6 rounded-full bg-danger/10 border border-danger/30 hover:bg-danger/20 transition-colors"
               onClick={() => setShowResetDialog(true)}
             >
-              <RotateCcw className="w-4 h-4 mr-2" />
-              Réinitialiser tout
-            </Button>
+              <RotateCcw className="w-4 h-4 text-danger" />
+            </button>
           )}
         </motion.div>
 

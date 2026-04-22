@@ -19,6 +19,7 @@ import AddTransaction from "./pages/AddTransaction";
 import Settings from "./pages/Settings";
 import Help from "./pages/Help";
 import ManageTransactions from "./pages/ManageTransactions";
+import Reports from "./pages/Reports";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -120,6 +121,15 @@ const AppContent = () => {
             <ProtectedRoute>
               <TopBar />
               <ManageTransactions />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/reports"
+          element={
+            <ProtectedRoute>
+              <TopBar />
+              <Reports />
             </ProtectedRoute>
           }
         />

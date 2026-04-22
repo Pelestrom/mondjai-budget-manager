@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { User, Lock, Settings as SettingsIcon, HelpCircle, LogOut, Download, Upload, Search, ArrowLeft } from "lucide-react";
+import { User, Lock, Settings as SettingsIcon, HelpCircle, LogOut, Download, Upload, Search, ArrowLeft, FileText } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -269,6 +269,22 @@ const Settings = () => {
               />
             </div>
           </Card>
+        </motion.div>
+
+        {/* Reports */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+        >
+          <Button
+            onClick={() => navigate("/reports")}
+            variant="outline"
+            className="w-full justify-start text-primary border-primary/30 hover:bg-primary/10"
+          >
+            <FileText className="w-4 h-4 mr-2" />
+            Bilans
+          </Button>
         </motion.div>
 
         {/* Logout */}
