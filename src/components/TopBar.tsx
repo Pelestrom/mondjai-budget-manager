@@ -71,8 +71,8 @@ export const TopBar = () => {
           {/* Notification Bell */}
           <NavLink to="/notifications" className="relative">
             <motion.div whileTap={{ scale: 0.9 }}>
-              <button className="relative h-10 w-10 rounded-full bg-card border border-border/50 hover:bg-muted transition-colors flex items-center justify-center">
-                <Bell className="w-5 h-5 text-foreground" />
+              <button className="relative h-10 w-10 rounded-full bg-card border border-border/50 hover:bg-primary/10 hover:border-primary/30 transition-all duration-300 flex items-center justify-center group">
+                <Bell className="w-5 h-5 text-foreground group-hover:text-primary transition-colors duration-300" />
                 {unreadCount > 0 && (
                   <motion.span
                     initial={{ scale: 0 }}
@@ -88,8 +88,8 @@ export const TopBar = () => {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <motion.div whileTap={{ scale: 0.95 }}>
-                <button className="relative h-10 w-10 rounded-full bg-card border border-border/50 hover:bg-muted transition-colors flex items-center justify-center">
-                  <Menu className="w-5 h-5 text-foreground" />
+                <button className="relative h-10 w-10 rounded-full bg-card border border-border/50 hover:bg-primary/10 hover:border-primary/30 transition-all duration-300 flex items-center justify-center group">
+                  <Menu className="w-5 h-5 text-foreground group-hover:text-primary transition-colors duration-300" />
                 </button>
               </motion.div>
             </DropdownMenuTrigger>
