@@ -7,18 +7,21 @@ import { Input } from "@/components/ui/input";
 import { useTransactions } from "@/hooks/useTransactions";
 import { useBudgets } from "@/hooks/useBudgets";
 import { useCategories } from "@/hooks/useCategories";
+import { useAuth } from "@/hooks/useAuth";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import jsPDF from "jspdf";
-import html2canvas from "html2canvas";
 import { format, startOfMonth, endOfMonth } from "date-fns";
 import { fr } from "date-fns/locale";
+import mondjaiLogo from "@/assets/mondjai-logo.png";
 
 const Reports = () => {
   const navigate = useNavigate();
   const { transactions } = useTransactions();
-  const { budgets } = useBudgets();
+  const { budgets, globalBudget } = useBudgets();
   const { categories } = useCategories();
+  const { profile } = useAuth();
+  const currency = profile?.currency || "FCFA";
 
   const [startDate, setStartDate] = useState(format(startOfMonth(new Date()), "yyyy-MM-dd"));
   const [endDate, setEndDate] = useState(format(endOfMonth(new Date()), "yyyy-MM-dd"));
