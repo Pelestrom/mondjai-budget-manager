@@ -1,12 +1,12 @@
 import { NavLink, useLocation } from "react-router-dom";
-import { Chrome as Home, Wallet, Plus, ChartBar as BarChart3 } from "lucide-react";
+import { House, Wallet, Plus, ChartBar as BarChart3 } from "lucide-react";
 import { motion } from "framer-motion";
 
 export const BottomTabBar = () => {
   const location = useLocation();
 
   const tabs = [
-    { path: "/", icon: Home, label: "Accueil" },
+    { path: "/", icon: House, label: "Accueil" },
     { path: "/budgets", icon: Wallet, label: "Budgets" },
     { path: "/add-transaction", icon: Plus, label: "Ajouter", isSpecial: true },
     { path: "/stats", icon: BarChart3, label: "Stats" },
@@ -24,7 +24,7 @@ export const BottomTabBar = () => {
           initial={{ y: 100, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ type: "spring", stiffness: 100, damping: 20 }}
-          className="bg-card rounded-full shadow-2xl border border-border/20 flex items-center justify-around w-full max-w-sm h-16 px-2"
+          className="bg-card rounded-full shadow-2xl border border-border/20 flex items-center justify-between w-full max-w-sm h-16 px-4"
         >
           {tabs.map((tab, index) => {
             const active = isActive(tab.path);
@@ -34,17 +34,17 @@ export const BottomTabBar = () => {
                 <NavLink
                   key={tab.path}
                   to={tab.path}
-                  className="relative flex items-center justify-center -mx-2"
+                  className="flex-1 flex items-center justify-center"
                 >
                   <motion.div
-                    whileHover={{ scale: 1.1 }}
+                    whileHover={{ scale: 1.1, rotate: 90 }}
                     whileTap={{ scale: 0.9 }}
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
                     transition={{ type: "spring", stiffness: 200, damping: 15, delay: index * 0.05 }}
-                    className="w-14 h-14 rounded-full bg-primary shadow-lg shadow-primary/30 flex items-center justify-center hover:shadow-xl hover:shadow-primary/40 transition-shadow"
+                    className="w-12 h-12 rounded-full bg-primary shadow-lg shadow-primary/30 flex items-center justify-center hover:shadow-xl hover:shadow-primary/40 transition-shadow"
                   >
-                    <Plus className="w-6 h-6 text-white" />
+                    <Plus className="w-6 h-6 text-white" strokeWidth={2.5} />
                   </motion.div>
                 </NavLink>
               );
@@ -54,36 +54,36 @@ export const BottomTabBar = () => {
               <NavLink
                 key={tab.path}
                 to={tab.path}
-                className="flex flex-col items-center justify-center flex-1 relative"
+                className="flex-1 flex items-center justify-center"
               >
                 <motion.div
-                  whileHover={{ scale: 1.15 }}
+                  whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.85 }}
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ type: "spring", stiffness: 300, damping: 30, delay: index * 0.05 }}
-                  className="flex flex-col items-center justify-center p-3 rounded-full transition-colors"
+                  className="relative w-10 h-10 flex items-center justify-center"
                 >
                   {active && (
                     <motion.div
                       layoutId="activeBackground"
-                      className="absolute inset-0 bg-primary/10 rounded-full"
-                      transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                      className="absolute inset-0 bg-primary/15 rounded-full"
+                      transition={{ type: "spring", stiffness: 400, damping: 30 }}
                     />
                   )}
                   <motion.div
                     animate={{
-                      scale: active ? 1.2 : 1,
+                      scale: active ? 1.1 : 1,
+                      y: active ? -1 : 0,
                     }}
-                    transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 20 }}
                     className="relative z-10"
                   >
                     <tab.icon
-                      className={`w-6 h-6 transition-all duration-300 ${
-                        active ? "text-primary" : "text-muted-foreground hover:text-primary"
+                      className={`w-5 h-5 transition-colors duration-300 ${
+                        active ? "text-primary" : "text-muted-foreground"
                       }`}
                       strokeWidth={active ? 2.5 : 2}
-                      fill={active ? "currentColor" : "none"}
                     />
                   </motion.div>
                 </motion.div>
