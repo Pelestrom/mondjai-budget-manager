@@ -7,18 +7,21 @@ import { Input } from "@/components/ui/input";
 import { useTransactions } from "@/hooks/useTransactions";
 import { useBudgets } from "@/hooks/useBudgets";
 import { useCategories } from "@/hooks/useCategories";
+import { useAuth } from "@/hooks/useAuth";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import jsPDF from "jspdf";
-import html2canvas from "html2canvas";
 import { format, startOfMonth, endOfMonth } from "date-fns";
 import { fr } from "date-fns/locale";
+import mondjaiLogo from "@/assets/mondjai-logo.png";
 
 const Reports = () => {
   const navigate = useNavigate();
   const { transactions } = useTransactions();
-  const { budgets } = useBudgets();
+  const { budgets, globalBudget } = useBudgets();
   const { categories } = useCategories();
+  const { profile } = useAuth();
+  const currency = profile?.currency || "FCFA";
 
   const [startDate, setStartDate] = useState(format(startOfMonth(new Date()), "yyyy-MM-dd"));
   const [endDate, setEndDate] = useState(format(endOfMonth(new Date()), "yyyy-MM-dd"));
@@ -47,18 +50,60 @@ const Reports = () => {
 
     const statsByCategory = categories.map((cat) => {
       const catTransactions = filtered.filter((t) => t.category === cat.id || t.category === cat.name);
-      const total = catTransactions.reduce((sum, t) => {
-        return t.type === "expense" ? sum + t.amount : sum - t.amount;
-      }, 0);
+      const expensesTotal = catTransactions
+        .filter((t) => t.type === "expense")
+        .reduce((sum, t) => sum + t.amount, 0);
       return {
         name: cat.name,
-        total,
+        total: expensesTotal,
         count: catTransactions.length,
+        color: cat.color || "#00A86B",
       };
-    }).filter(s => s.total !== 0);
+    }).filter((s) => s.total > 0).sort((a, b) => b.total - a.total);
 
     return { income, expenses, balance: income - expenses, statsByCategory };
   };
+
+  // Brand palette (mirrors index.css design tokens)
+  const COLORS = {
+    primary: [0, 168, 107] as [number, number, number],     // #00A86B
+    secondary: [242, 201, 76] as [number, number, number],  // #F2C94C
+    danger: [239, 68, 68] as [number, number, number],      // #EF4444
+    dark: [26, 26, 26] as [number, number, number],         // #1A1A1A
+    muted: [115, 115, 115] as [number, number, number],
+    bgSoft: [248, 249, 250] as [number, number, number],    // #F8F9FA
+    border: [229, 229, 229] as [number, number, number],
+  };
+
+  const hexToRgb = (hex: string): [number, number, number] => {
+    const clean = hex.replace("#", "");
+    const full = clean.length === 3 ? clean.split("").map((c) => c + c).join("") : clean;
+    const num = parseInt(full, 16);
+    return [(num >> 16) & 255, (num >> 8) & 255, num & 255];
+  };
+
+  const fmt = (n: number) => `${n.toLocaleString("fr-FR", { maximumFractionDigits: 0 })} ${currency}`;
+
+  const loadLogoDataUrl = (): Promise<string | null> =>
+    new Promise((resolve) => {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => {
+        try {
+          const canvas = document.createElement("canvas");
+          canvas.width = img.naturalWidth;
+          canvas.height = img.naturalHeight;
+          const ctx = canvas.getContext("2d");
+          if (!ctx) return resolve(null);
+          ctx.drawImage(img, 0, 0);
+          resolve(canvas.toDataURL("image/png"));
+        } catch {
+          resolve(null);
+        }
+      };
+      img.onerror = () => resolve(null);
+      img.src = mondjaiLogo;
+    });
 
   const generatePDF = async () => {
     try {
@@ -66,111 +111,274 @@ const Reports = () => {
       const filtered = filterTransactionsByDate();
       const stats = calculateStats(filtered);
 
-      const pdf = new jsPDF({
-        orientation: "portrait",
-        unit: "mm",
-        format: "a4",
-      });
-
+      const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
-      let yPosition = 20;
+      const margin = 15;
+      let y = 0;
 
-      // Header
-      pdf.setFontSize(24);
-      pdf.setFont(undefined, "bold");
-      pdf.text("Bilan Financier", pageWidth / 2, yPosition, { align: "center" });
+      // ---------- HEADER (green band with logo) ----------
+      pdf.setFillColor(...COLORS.primary);
+      pdf.rect(0, 0, pageWidth, 40, "F");
 
-      yPosition += 12;
+      const logoData = await loadLogoDataUrl();
+      if (logoData) {
+        try {
+          pdf.addImage(logoData, "PNG", margin, 10, 22, 22);
+        } catch {
+          /* ignore */
+        }
+      }
+
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFontSize(20);
+      pdf.setFont("helvetica", "bold");
+      pdf.text("Bilan Financier", pageWidth - margin, 18, { align: "right" });
+
       pdf.setFontSize(10);
-      pdf.setFont(undefined, "normal");
+      pdf.setFont("helvetica", "normal");
       pdf.text(
-        `Période: ${format(new Date(startDate), "dd MMMM yyyy", { locale: fr })} - ${format(new Date(endDate), "dd MMMM yyyy", { locale: fr })}`,
-        pageWidth / 2,
-        yPosition,
-        { align: "center" }
+        `${format(new Date(startDate), "dd MMM yyyy", { locale: fr })} → ${format(new Date(endDate), "dd MMM yyyy", { locale: fr })}`,
+        pageWidth - margin,
+        26,
+        { align: "right" }
+      );
+      if (profile?.username) {
+        pdf.setFontSize(9);
+        pdf.text(profile.username, pageWidth - margin, 33, { align: "right" });
+      }
+
+      y = 52;
+
+      // ---------- SUMMARY CARDS ----------
+      pdf.setTextColor(...COLORS.dark);
+      pdf.setFontSize(13);
+      pdf.setFont("helvetica", "bold");
+      pdf.text("Résumé", margin, y);
+      y += 6;
+
+      const cardW = (pageWidth - margin * 2 - 8) / 3;
+      const cardH = 24;
+
+      const drawCard = (
+        x: number,
+        label: string,
+        value: string,
+        color: [number, number, number]
+      ) => {
+        pdf.setFillColor(color[0], color[1], color[2]);
+        pdf.roundedRect(x, y, cardW, cardH, 3, 3, "F");
+        pdf.setTextColor(255, 255, 255);
+        pdf.setFontSize(8);
+        pdf.setFont("helvetica", "normal");
+        pdf.text(label, x + 4, y + 7);
+        pdf.setFontSize(13);
+        pdf.setFont("helvetica", "bold");
+        pdf.text(value, x + 4, y + 17);
+      };
+
+      drawCard(margin, "Entrées", fmt(stats.income), COLORS.primary);
+      drawCard(margin + cardW + 4, "Dépenses", fmt(stats.expenses), COLORS.danger);
+      drawCard(
+        margin + (cardW + 4) * 2,
+        "Solde",
+        fmt(stats.balance),
+        stats.balance >= 0 ? COLORS.primary : COLORS.danger
       );
 
-      yPosition += 15;
+      y += cardH + 4;
+      pdf.setTextColor(...COLORS.muted);
+      pdf.setFontSize(8);
+      pdf.text(
+        `${filtered.length} transaction(s) sur la période`,
+        margin,
+        y
+      );
+      y += 10;
 
-      // Summary Stats
-      pdf.setFontSize(12);
-      pdf.setFont(undefined, "bold");
-      pdf.text("Résumé", 20, yPosition);
+      // ---------- BAR CHART: Categories ----------
+      if (stats.statsByCategory.length > 0) {
+        pdf.setTextColor(...COLORS.dark);
+        pdf.setFontSize(13);
+        pdf.setFont("helvetica", "bold");
+        pdf.text("Dépenses par catégorie", margin, y);
+        y += 6;
 
-      yPosition += 10;
-      pdf.setFontSize(10);
-      pdf.setFont(undefined, "normal");
+        const top = stats.statsByCategory.slice(0, 8);
+        const maxVal = Math.max(...top.map((s) => s.total));
+        const chartW = pageWidth - margin * 2;
+        const rowH = 9;
+        const labelW = 40;
+        const valueW = 32;
+        const barAreaW = chartW - labelW - valueW - 4;
 
-      const summaryLines = [
-        `Entrées: ${stats.income.toFixed(2)}`,
-        `Dépenses: ${stats.expenses.toFixed(2)}`,
-        `Solde: ${stats.balance.toFixed(2)}`,
-        `Nombre de transactions: ${filtered.length}`,
+        // Soft background
+        pdf.setFillColor(...COLORS.bgSoft);
+        pdf.roundedRect(margin, y, chartW, top.length * rowH + 6, 3, 3, "F");
+        y += 4;
+
+        top.forEach((s) => {
+          const ratio = maxVal > 0 ? s.total / maxVal : 0;
+          const barW = Math.max(1, ratio * barAreaW);
+          const rgb = hexToRgb(s.color);
+
+          // Label
+          pdf.setTextColor(...COLORS.dark);
+          pdf.setFontSize(8);
+          pdf.setFont("helvetica", "normal");
+          const labelText = s.name.length > 18 ? s.name.slice(0, 17) + "…" : s.name;
+          pdf.text(labelText, margin + 3, y + 5);
+
+          // Bar background
+          pdf.setFillColor(...COLORS.border);
+          pdf.roundedRect(margin + labelW, y + 1.5, barAreaW, rowH - 4, 1.2, 1.2, "F");
+
+          // Bar fill
+          pdf.setFillColor(rgb[0], rgb[1], rgb[2]);
+          pdf.roundedRect(margin + labelW, y + 1.5, barW, rowH - 4, 1.2, 1.2, "F");
+
+          // Value
+          pdf.setTextColor(...COLORS.dark);
+          pdf.setFont("helvetica", "bold");
+          pdf.text(fmt(s.total), margin + chartW - 3, y + 5, { align: "right" });
+
+          y += rowH;
+        });
+        y += 6;
+      }
+
+      // ---------- BUDGETS ----------
+      const allBudgets = [
+        ...(globalBudget
+          ? [{ name: "Budget Global", amount: Number(globalBudget.amount), period: globalBudget.period, spent: stats.expenses }]
+          : []),
+        ...budgets
+          .filter((b) => b.category_id)
+          .map((b) => {
+            const cat = categories.find((c) => c.id === b.category_id);
+            const spent = filtered
+              .filter((t) => t.type === "expense" && (t.category === b.category_id || t.category === cat?.name))
+              .reduce((sum, t) => sum + t.amount, 0);
+            return {
+              name: cat?.name || "Catégorie",
+              amount: Number(b.amount),
+              period: b.period,
+              spent,
+            };
+          }),
       ];
 
-      summaryLines.forEach((line) => {
-        pdf.text(line, 20, yPosition);
-        yPosition += 8;
-      });
+      if (allBudgets.length > 0) {
+        if (y > pageHeight - 60) {
+          pdf.addPage();
+          y = 20;
+        }
 
-      yPosition += 5;
+        pdf.setTextColor(...COLORS.dark);
+        pdf.setFontSize(13);
+        pdf.setFont("helvetica", "bold");
+        pdf.text("Suivi des budgets", margin, y);
+        y += 7;
 
-      // Categories breakdown
-      if (stats.statsByCategory.length > 0) {
-        pdf.setFontSize(12);
-        pdf.setFont(undefined, "bold");
-        pdf.text("Répartition par Catégorie", 20, yPosition);
-
-        yPosition += 10;
-        pdf.setFontSize(9);
-        pdf.setFont(undefined, "normal");
-
-        stats.statsByCategory.forEach((stat) => {
-          if (yPosition > pageHeight - 20) {
+        allBudgets.forEach((b) => {
+          if (y > pageHeight - 25) {
             pdf.addPage();
-            yPosition = 20;
+            y = 20;
           }
-          const categoryLine = `${stat.name}: ${stat.total.toFixed(2)} (${stat.count} transaction(s))`;
-          pdf.text(categoryLine, 20, yPosition);
-          yPosition += 7;
+          const pct = b.amount > 0 ? Math.min(100, (b.spent / b.amount) * 100) : 0;
+          const overBudget = b.spent > b.amount;
+          const fill = overBudget ? COLORS.danger : pct >= 80 ? COLORS.secondary : COLORS.primary;
+
+          pdf.setFontSize(9);
+          pdf.setFont("helvetica", "bold");
+          pdf.setTextColor(...COLORS.dark);
+          pdf.text(b.name, margin, y);
+          pdf.setFont("helvetica", "normal");
+          pdf.setTextColor(...COLORS.muted);
+          pdf.text(`${fmt(b.spent)} / ${fmt(b.amount)}  •  ${pct.toFixed(0)}%`, pageWidth - margin, y, {
+            align: "right",
+          });
+
+          y += 2.5;
+          const barW = pageWidth - margin * 2;
+          pdf.setFillColor(...COLORS.border);
+          pdf.roundedRect(margin, y, barW, 3, 1.5, 1.5, "F");
+          pdf.setFillColor(fill[0], fill[1], fill[2]);
+          pdf.roundedRect(margin, y, (barW * pct) / 100, 3, 1.5, 1.5, "F");
+
+          y += 9;
         });
       }
 
-      yPosition += 5;
+      // ---------- TRANSACTIONS LIST (last page section) ----------
+      if (filtered.length > 0) {
+        if (y > pageHeight - 50) {
+          pdf.addPage();
+          y = 20;
+        }
 
-      // Budgets information
-      if (budgets.length > 0) {
-        pdf.setFontSize(12);
-        pdf.setFont(undefined, "bold");
-        pdf.text("Budgets", 20, yPosition);
+        pdf.setTextColor(...COLORS.dark);
+        pdf.setFontSize(13);
+        pdf.setFont("helvetica", "bold");
+        pdf.text("Détail des transactions", margin, y);
+        y += 6;
 
-        yPosition += 10;
-        pdf.setFontSize(9);
-        pdf.setFont(undefined, "normal");
+        // Table header
+        pdf.setFillColor(...COLORS.primary);
+        pdf.rect(margin, y, pageWidth - margin * 2, 7, "F");
+        pdf.setTextColor(255, 255, 255);
+        pdf.setFontSize(8);
+        pdf.setFont("helvetica", "bold");
+        pdf.text("Date", margin + 2, y + 5);
+        pdf.text("Catégorie", margin + 28, y + 5);
+        pdf.text("Type", margin + 80, y + 5);
+        pdf.text("Montant", pageWidth - margin - 2, y + 5, { align: "right" });
+        y += 7;
 
-        budgets.forEach((budget) => {
-          if (yPosition > pageHeight - 20) {
+        const sorted = [...filtered].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        sorted.forEach((t, i) => {
+          if (y > pageHeight - 15) {
             pdf.addPage();
-            yPosition = 20;
+            y = 20;
           }
-          const categoryName = categories.find((c) => c.id === budget.category_id)?.name || "N/A";
-          const budgetLine = `${categoryName}: ${budget.amount.toFixed(2)} (Période: ${budget.period})`;
-          pdf.text(budgetLine, 20, yPosition);
-          yPosition += 7;
+          if (i % 2 === 0) {
+            pdf.setFillColor(...COLORS.bgSoft);
+            pdf.rect(margin, y, pageWidth - margin * 2, 6, "F");
+          }
+          pdf.setTextColor(...COLORS.dark);
+          pdf.setFontSize(8);
+          pdf.setFont("helvetica", "normal");
+          pdf.text(format(new Date(t.date), "dd/MM/yy"), margin + 2, y + 4);
+          const catName = (t.category || "—").slice(0, 22);
+          pdf.text(catName, margin + 28, y + 4);
+          pdf.setTextColor(...(t.type === "income" ? COLORS.primary : COLORS.danger));
+          pdf.text(t.type === "income" ? "Entrée" : "Dépense", margin + 80, y + 4);
+          pdf.setFont("helvetica", "bold");
+          pdf.text(`${t.type === "income" ? "+" : "-"}${fmt(t.amount)}`, pageWidth - margin - 2, y + 4, {
+            align: "right",
+          });
+          y += 6;
         });
       }
 
-      yPosition += 10;
+      // ---------- FOOTER on every page ----------
+      const totalPages = pdf.getNumberOfPages();
+      for (let p = 1; p <= totalPages; p++) {
+        pdf.setPage(p);
+        pdf.setDrawColor(...COLORS.border);
+        pdf.line(margin, pageHeight - 12, pageWidth - margin, pageHeight - 12);
+        pdf.setFontSize(7);
+        pdf.setTextColor(...COLORS.muted);
+        pdf.setFont("helvetica", "normal");
+        pdf.text(
+          `MonDjai • Généré le ${format(new Date(), "dd MMM yyyy 'à' HH:mm", { locale: fr })}`,
+          margin,
+          pageHeight - 7
+        );
+        pdf.text(`Page ${p} / ${totalPages}`, pageWidth - margin, pageHeight - 7, { align: "right" });
+      }
 
-      // Footer
-      pdf.setFontSize(8);
-      pdf.setFont(undefined, "normal");
-      const timestamp = format(new Date(), "dd MMMM yyyy 'à' HH:mm", { locale: fr });
-      pdf.text(`Généré le ${timestamp}`, pageWidth / 2, pageHeight - 10, { align: "center" });
-
-      // Save PDF
-      const fileName = `bilan_${format(new Date(startDate), "yyyy-MM-dd")}_to_${format(new Date(endDate), "yyyy-MM-dd")}.pdf`;
+      const fileName = `bilan_mondjai_${format(new Date(startDate), "yyyy-MM-dd")}_${format(new Date(endDate), "yyyy-MM-dd")}.pdf`;
       pdf.save(fileName);
 
       toast.success("Bilan téléchargé avec succès");
