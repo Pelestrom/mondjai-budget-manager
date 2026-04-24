@@ -1,4 +1,4 @@
-import { Bell, Menu, User, Clock, Settings, LogOut, Grid3X3, HelpCircle, Download, Wallet } from "lucide-react";
+import { Bell, Menu, User, Clock, Settings, LogOut, Grid3x3 as Grid3X3, CircleHelp as HelpCircle, Download, Wallet } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/hooks/useAuth";
 import { useNotifications } from "@/hooks/useNotifications";
@@ -54,33 +54,33 @@ export const TopBar = () => {
     <motion.header
       initial={{ y: -100 }}
       animate={{ y: 0 }}
-      className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-lg border-b border-border/30 safe-area-top"
+      className="fixed top-0 left-0 right-0 z-50 bg-card/80 backdrop-blur-md border-b border-border/10 safe-area-top"
     >
-      <div className="flex items-center justify-between px-4 py-3">
+      <div className="flex items-center justify-between px-6 py-4">
         {/* Logo */}
         <motion.div
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
           className="flex items-center"
         >
-          <img src={mondjaiLogo} alt="MonDjai" className="h-8" />
+          <img src={mondjaiLogo} alt="MonDjai" className="h-9" />
         </motion.div>
 
         {/* Right side: Notifications & Menu */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           {/* Notification Bell */}
           <NavLink to="/notifications" className="relative">
             <motion.div whileTap={{ scale: 0.9 }}>
-              <Button variant="ghost" size="icon" className="relative h-10 w-10">
-                <Bell className="w-5 h-5" />
+              <button className="relative h-10 w-10 rounded-full bg-card border border-border/50 hover:bg-muted transition-colors flex items-center justify-center">
+                <Bell className="w-5 h-5 text-foreground" />
                 {unreadCount > 0 && (
                   <motion.span
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
-                    className="absolute top-1.5 right-1.5 bg-danger rounded-full w-2.5 h-2.5"
+                    className="absolute top-1 right-1 bg-danger rounded-full w-2.5 h-2.5"
                   />
                 )}
-              </Button>
+              </button>
             </motion.div>
           </NavLink>
 
@@ -88,9 +88,9 @@ export const TopBar = () => {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <motion.div whileTap={{ scale: 0.95 }}>
-                <Button variant="ghost" size="icon" className="h-10 w-10">
-                  <Menu className="w-5 h-5" />
-                </Button>
+                <button className="relative h-10 w-10 rounded-full bg-card border border-border/50 hover:bg-muted transition-colors flex items-center justify-center">
+                  <Menu className="w-5 h-5 text-foreground" />
+                </button>
               </motion.div>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56 bg-popover shadow-xl border-border/50">
