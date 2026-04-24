@@ -286,10 +286,10 @@ const ManageTransactions = () => {
                     transition={{ delay: index * 0.03 }}
                   >
                     <Card 
-                      className={`p-4 card-gradient ${selectedIds.has(transaction.id) ? 'ring-2 ring-primary' : ''}`}
+                      className={`p-3 card-gradient ${selectedIds.has(transaction.id) ? 'ring-2 ring-primary' : ''}`}
                       onClick={() => selectionMode && toggleSelection(transaction.id)}
                     >
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2.5">
                         {selectionMode && (
                           <Checkbox
                             checked={selectedIds.has(transaction.id)}
@@ -298,7 +298,7 @@ const ManageTransactions = () => {
                           />
                         )}
                         <div
-                          className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
+                          className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
                           style={{
                             backgroundColor: `${getCategoryColor(transaction.category)}20`,
                             color: getCategoryColor(transaction.category),
@@ -306,42 +306,45 @@ const ManageTransactions = () => {
                         >
                           {getCategoryIcon(transaction.category)}
                         </div>
+
+                        {/* Middle: name + date + amount stacked */}
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span className="font-semibold truncate">{transaction.category}</span>
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="font-semibold truncate text-sm">{transaction.category}</span>
+                            <p className={`font-bold text-sm whitespace-nowrap ${transaction.type === "income" ? "text-success" : "text-danger"}`}>
+                              {transaction.type === "income" ? "+" : "-"}{transaction.amount.toLocaleString()} {profile?.currency}
+                            </p>
+                          </div>
+                          <div className="flex items-center justify-between gap-2 mt-0.5">
+                            <p className="text-xs text-muted-foreground truncate">
+                              {format(new Date(transaction.date), "dd MMM yyyy", { locale: fr })}
+                              {transaction.note && ` • ${transaction.note}`}
+                            </p>
                             {transaction.type === "income" ? (
-                              <ArrowUpCircle className="w-4 h-4 text-success shrink-0" />
+                              <ArrowUpCircle className="w-3.5 h-3.5 text-success shrink-0" />
                             ) : (
-                              <ArrowDownCircle className="w-4 h-4 text-danger shrink-0" />
+                              <ArrowDownCircle className="w-3.5 h-3.5 text-danger shrink-0" />
                             )}
                           </div>
-                          <p className="text-xs text-muted-foreground">
-                            {format(new Date(transaction.date), "dd MMM yyyy", { locale: fr })}
-                            {transaction.note && ` • ${transaction.note}`}
-                          </p>
                         </div>
-                        <div className="text-right shrink-0">
-                          <p className={`font-bold ${transaction.type === "income" ? "text-success" : "text-danger"}`}>
-                            {transaction.type === "income" ? "+" : "-"}{transaction.amount.toLocaleString()} {profile?.currency}
-                          </p>
-                        </div>
+
                         {!selectionMode && (
-                          <div className="flex gap-1 shrink-0">
+                          <div className="flex flex-col gap-1 shrink-0 ml-1">
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-8 w-8"
-                              onClick={() => handleEdit(transaction)}
+                              className="h-7 w-7"
+                              onClick={(e) => { e.stopPropagation(); handleEdit(transaction); }}
                             >
-                              <Edit2 className="w-4 h-4 text-primary" />
+                              <Edit2 className="w-3.5 h-3.5 text-primary" />
                             </Button>
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-8 w-8"
-                              onClick={() => handleDelete(transaction.id)}
+                              className="h-7 w-7"
+                              onClick={(e) => { e.stopPropagation(); handleDelete(transaction.id); }}
                             >
-                              <Trash2 className="w-4 h-4 text-danger" />
+                              <Trash2 className="w-3.5 h-3.5 text-danger" />
                             </Button>
                           </div>
                         )}
