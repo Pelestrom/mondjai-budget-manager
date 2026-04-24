@@ -141,15 +141,15 @@ const Dashboard = () => {
                   hidden={isBalanceHidden}
                 />
               </h1>
-              <div className="flex items-center gap-5 mt-4 text-sm">
+              <div className="flex items-center gap-3 mt-4 text-sm">
                 <div className="flex items-center gap-2 bg-white/20 rounded-full px-3 py-1.5">
-                  <ArrowUpCircle className="w-4 h-4" />
+                  <ArrowUpCircle className="w-4 h-4 text-success" />
                   <span className="font-medium">
                     {isBalanceHidden ? "••••" : `+${totalIncome.toLocaleString()}`}
                   </span>
                 </div>
                 <div className="flex items-center gap-2 bg-white/20 rounded-full px-3 py-1.5">
-                  <ArrowDownCircle className="w-4 h-4" />
+                  <ArrowDownCircle className="w-4 h-4 text-danger" />
                   <span className="font-medium">
                     {isBalanceHidden ? "••••" : `-${totalExpenses.toLocaleString()}`}
                   </span>
