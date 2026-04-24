@@ -111,6 +111,10 @@ export const useBudgetNotificationsDB = () => {
     });
   };
 
+  // In-flight guard to prevent the same notification being created twice
+  // before the async addNotification resolves (effect can re-run rapidly).
+  const inFlight = useRef<Set<string>>(new Set());
+
   const notifyOnce = (params: {
     key: string;
     type: NotifType;
@@ -121,22 +125,26 @@ export const useBudgetNotificationsDB = () => {
   }) => {
     const { key, type, title, message, start, end } = params;
 
-    // For warning/error types, check cooldown first
+    // 1) In-flight: a previous tick already started creating this exact notif
+    if (inFlight.current.has(key)) return;
+
+    // 2) Cooldown for alerts (warning/error): don't repeat within 12h
     if ((type === 'warning' || type === 'error') && isWithinCooldown(key)) {
       return;
     }
 
+    // 3) Already sent (info types only - alerts use cooldown above)
     if (alreadySent(key) && type !== 'warning' && type !== 'error') {
       return;
     }
 
-    // Check if a similar notification exists in DB recently (within 12h) for warning/error
+    // 4) Similar recent alert exists in DB → sync local storage and skip
     if (!notificationsLoading && hasSimilarRecentNotification({ type, title })) {
-      markSent(key); // Mark as sent to sync local storage
+      markSent(key);
       return;
     }
 
-    // If we already have it in DB for this period, consider it "sent" to prevent duplicates on navigation.
+    // 5) Same notification already exists for this exact period in DB
     if (start && end && !notificationsLoading) {
       if (hasSameNotificationInPeriod({ type, title, message, start, end })) {
         markSent(key);
@@ -144,10 +152,19 @@ export const useBudgetNotificationsDB = () => {
       }
     }
 
+    // Reserve the key SYNCHRONOUSLY before the async call to prevent
+    // duplicate creation when the effect re-runs (e.g. notifications array updates).
+    inFlight.current.add(key);
+    markSent(key);
+
     void addNotification({ title, message, type })
-      .then(() => markSent(key))
       .catch(() => {
-        // If it fails, we don't mark as sent so it can retry later.
+        // If creation failed, allow a retry on the next effect tick
+        delete lastChecked.current[key];
+        persist();
+      })
+      .finally(() => {
+        inFlight.current.delete(key);
       });
   };
 

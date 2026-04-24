@@ -271,22 +271,6 @@ const Settings = () => {
           </Card>
         </motion.div>
 
-        {/* Reports */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-        >
-          <Button
-            onClick={() => navigate("/reports")}
-            variant="outline"
-            className="w-full justify-start text-primary border-primary/30 hover:bg-primary/10"
-          >
-            <FileText className="w-4 h-4 mr-2" />
-            Bilans
-          </Button>
-        </motion.div>
-
         {/* Logout */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
