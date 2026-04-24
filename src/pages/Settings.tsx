@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { User, Lock, Settings as SettingsIcon, CircleHelp as HelpCircle, LogOut, Download, Upload, Search, ArrowLeft, FileText } from "lucide-react";
+import { Lock, Settings as SettingsIcon, LogOut, Search, ArrowLeft } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
