@@ -46,7 +46,7 @@ const Reports = () => {
     });
 
     const statsByCategory = categories.map((cat) => {
-      const catTransactions = filtered.filter((t) => t.category_id === cat.id);
+      const catTransactions = filtered.filter((t) => t.category === cat.id || t.category === cat.name);
       const total = catTransactions.reduce((sum, t) => {
         return t.type === "expense" ? sum + t.amount : sum - t.amount;
       }, 0);
@@ -155,7 +155,7 @@ const Reports = () => {
             yPosition = 20;
           }
           const categoryName = categories.find((c) => c.id === budget.category_id)?.name || "N/A";
-          const budgetLine = `${categoryName}: ${budget.limit.toFixed(2)} (Période: ${budget.period})`;
+          const budgetLine = `${categoryName}: ${budget.amount.toFixed(2)} (Période: ${budget.period})`;
           pdf.text(budgetLine, 20, yPosition);
           yPosition += 7;
         });
