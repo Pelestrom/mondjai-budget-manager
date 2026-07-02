@@ -5,12 +5,12 @@ import { motion } from "framer-motion";
 export const BottomTabBar = () => {
   const location = useLocation();
 
-  const tabs = [
+  const tabs: Array<{ path: string; icon: typeof House; label: string; isSpecial?: boolean }> = [
     { path: "/", icon: House, label: "Accueil" },
     { path: "/budgets", icon: Wallet, label: "Budgets" },
     { path: "/add-transaction", icon: Plus, label: "Ajouter", isSpecial: true },
     { path: "/stats", icon: BarChart3, label: "Stats" },
-  ] as const;
+  ];
 
   const isActive = (path: string) => (path === "/" ? location.pathname === "/" : location.pathname.startsWith(path));
 
