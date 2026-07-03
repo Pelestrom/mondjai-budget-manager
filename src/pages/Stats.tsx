@@ -135,15 +135,11 @@ const Stats = () => {
   return (
     <div className="min-h-screen pb-24 pt-20">
       <div className="p-6 space-y-6">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
-          <h1 className="text-2xl font-bold text-foreground">Statistiques</h1>
-          <p className="text-sm text-muted-foreground">
-            Vue d'ensemble de vos finances
-          </p>
-        </motion.div>
+        <PageHero
+          title="Statistiques"
+          subtitle="Vue d'ensemble de tes finances"
+          icon={TrendingUp}
+        />
 
         <Tabs value={period} onValueChange={(v: any) => setPeriod(v)}>
           <TabsList className="grid w-full grid-cols-3">
