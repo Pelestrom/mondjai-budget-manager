@@ -77,26 +77,21 @@ const History = () => {
   return (
     <div className="min-h-screen pb-8 pt-20">
       <div className="p-6 space-y-6">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex items-center gap-4"
-        >
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate(-1)}
-            className="shrink-0"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">Historique</h1>
-            <p className="text-sm text-muted-foreground">
-              {filteredTransactions.length} transactions
-            </p>
-          </div>
-        </motion.div>
+        <PageHero
+          title="Historique"
+          subtitle={`${filteredTransactions.length} transactions`}
+          icon={Calendar}
+          action={
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate(-1)}
+              className="text-white hover:bg-white/10 hover:text-white"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+          }
+        />
 
         {/* Search & Filter */}
         <motion.div
