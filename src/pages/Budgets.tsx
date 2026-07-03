@@ -21,6 +21,7 @@ import { fr } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import * as LucideIcons from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PageHero } from "@/components/PageHero";
 
 const Budgets = () => {
   const { profile } = useAuth();
