@@ -169,18 +169,6 @@ const Categories = () => {
                 </Button>
               </motion.div>
             </DialogTrigger>
-          <Dialog open={isDialogOpen} onOpenChange={(open) => {
-            setIsDialogOpen(open);
-            if (!open) resetForm();
-          }}>
-            <DialogTrigger asChild>
-              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                <Button size="sm" className="btn-primary shadow-lg">
-                  <Plus className="w-4 h-4 mr-1" />
-                  Ajouter
-                </Button>
-              </motion.div>
-            </DialogTrigger>
             <DialogContent className="glassmorphism">
               <DialogHeader>
                 <DialogTitle>
