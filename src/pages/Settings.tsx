@@ -13,6 +13,7 @@ import { currencies } from "@/lib/currencies";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PageHero } from "@/components/PageHero";
 
 const Settings = () => {
   const navigate = useNavigate();
