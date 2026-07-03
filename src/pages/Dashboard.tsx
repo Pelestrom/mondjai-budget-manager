@@ -107,7 +107,7 @@ const Dashboard = () => {
 
         {/* HERO — Solde */}
         <motion.div variants={item}>
-          <HeroCard className="p-6">
+          <HeroCard className="p-6" pattern>
             {/* Top bar: avatar + notif */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">

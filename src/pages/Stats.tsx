@@ -12,6 +12,7 @@ import { format, subDays, startOfWeek, endOfWeek, isWithinInterval, startOfMonth
 import { fr } from "date-fns/locale";
 import * as LucideIcons from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PageHero } from "@/components/PageHero";
 
 const COLORS = ['#00A86B', '#F2C94C', '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#74B9FF', '#A29BFE', '#FD79A8', '#00B894'];
 
@@ -135,15 +136,11 @@ const Stats = () => {
   return (
     <div className="min-h-screen pb-24 pt-20">
       <div className="p-6 space-y-6">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
-          <h1 className="text-2xl font-bold text-foreground">Statistiques</h1>
-          <p className="text-sm text-muted-foreground">
-            Vue d'ensemble de vos finances
-          </p>
-        </motion.div>
+        <PageHero
+          title="Statistiques"
+          subtitle="Vue d'ensemble de tes finances"
+          icon={TrendingUp}
+        />
 
         <Tabs value={period} onValueChange={(v: any) => setPeriod(v)}>
           <TabsList className="grid w-full grid-cols-3">

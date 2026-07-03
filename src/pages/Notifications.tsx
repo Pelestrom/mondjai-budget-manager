@@ -8,6 +8,7 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { motion } from "framer-motion";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PageHero } from "@/components/PageHero";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
@@ -133,27 +134,21 @@ const Notifications = () => {
   return (
     <div className="min-h-screen pb-8 pt-20">
       <div className="p-6 space-y-6">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex items-center gap-4"
-        >
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate(-1)}
-            className="shrink-0"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-          <div className="flex-1">
-            <h1 className="text-2xl font-bold text-foreground">Notifications</h1>
-            <p className="text-sm text-muted-foreground">
-              {notifications.filter((n) => !n.read).length} non lues
-            </p>
-          </div>
-          <Bell className="w-6 h-6 text-primary" />
-        </motion.div>
+        <PageHero
+          title="Notifications"
+          subtitle={`${notifications.filter((n) => !n.read).length} non lues`}
+          icon={Bell}
+          action={
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate(-1)}
+              className="text-white hover:bg-white/10 hover:text-white"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+          }
+        />
 
         {/* Action Bar */}
         <motion.div

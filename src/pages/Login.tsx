@@ -50,15 +50,16 @@ const Login = () => {
         <div className="surface-glass p-8 space-y-6">
           {/* Logo */}
           <motion.div
-            initial={{ scale: 0.8, opacity: 0 }}
+            initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ type: "spring", delay: 0.15, stiffness: 200, damping: 18 }}
-            className="text-center space-y-3"
+            className="text-center space-y-4"
           >
-            <div className="mx-auto w-20 h-20 rounded-3xl flex items-center justify-center"
-              style={{ background: "var(--gradient-cta)", boxShadow: "var(--shadow-cta), var(--shadow-glow)" }}>
-              <img src={mondjaiLogo} alt="MonDjai" className="h-10 w-10 object-contain" />
-            </div>
+            <img
+              src={mondjaiLogo}
+              alt="MonDjai"
+              className="mx-auto h-16 w-auto object-contain drop-shadow-[0_6px_18px_rgba(15,203,130,0.35)]"
+            />
             <div>
               <h1 className="font-display text-2xl font-bold text-foreground">Bon retour</h1>
               <p className="text-sm text-muted-foreground mt-1">Reprends le contrôle de ton budget</p>

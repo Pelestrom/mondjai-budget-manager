@@ -21,6 +21,7 @@ import { fr } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import * as LucideIcons from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PageHero } from "@/components/PageHero";
 
 const Budgets = () => {
   const { profile } = useAuth();
@@ -236,29 +237,24 @@ const Budgets = () => {
   return (
     <div className="min-h-screen pb-24 pt-20">
       <div className="p-6 space-y-6">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex items-center justify-between"
-        >
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">Budgets</h1>
-            <p className="text-sm text-muted-foreground">
-              Gérez vos limites de dépenses
-            </p>
-          </div>
-          {(globalBudget || budgets.length > 0) && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleResetAllBudgets}
-              className="text-danger border-danger/50 hover:bg-danger/10"
-            >
-              <RotateCcw className="w-4 h-4 mr-1" />
-              Réinitialiser
-            </Button>
-          )}
-        </motion.div>
+        <PageHero
+          title="Budgets"
+          subtitle="Gère tes limites de dépenses"
+          icon={Wallet}
+          action={
+            (globalBudget || budgets.length > 0) ? (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleResetAllBudgets}
+                className="text-white bg-white/10 hover:bg-white/20 hover:text-white border border-white/15"
+              >
+                <RotateCcw className="w-4 h-4 mr-1" />
+                Réinitialiser
+              </Button>
+            ) : undefined
+          }
+        />
 
         {/* Global Budget Card */}
         <motion.div
