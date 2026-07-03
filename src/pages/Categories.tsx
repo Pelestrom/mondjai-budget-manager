@@ -17,6 +17,7 @@ import { useCategories, Category } from "@/hooks/useCategories";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PageHero } from "@/components/PageHero";
 
 const iconMap = {
   ShoppingBag, Car, Home, Wifi, PartyPopper, Briefcase, Gift, Heart, Pill,
