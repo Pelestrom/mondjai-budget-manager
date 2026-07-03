@@ -12,6 +12,7 @@ import { format, subDays, startOfWeek, endOfWeek, isWithinInterval, startOfMonth
 import { fr } from "date-fns/locale";
 import * as LucideIcons from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PageHero } from "@/components/PageHero";
 
 const COLORS = ['#00A86B', '#F2C94C', '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#74B9FF', '#A29BFE', '#FD79A8', '#00B894'];
 
