@@ -141,21 +141,34 @@ const Categories = () => {
         animate={{ opacity: 1, y: 0 }}
         className="p-6 space-y-6"
       >
-        <div className="flex items-center gap-4">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate(-1)}
-            className="shrink-0"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-          <div className="flex-1">
-            <h1 className="text-2xl font-bold text-foreground">Catégories</h1>
-            <p className="text-sm text-muted-foreground">
-              {categories.length} catégories
-            </p>
-          </div>
+        <PageHero
+          title="Catégories"
+          subtitle={`${categories.length} catégories`}
+          icon={ShoppingBasket}
+          action={
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate(-1)}
+              className="text-white hover:bg-white/10 hover:text-white"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+          }
+        />
+        <div className="flex justify-end">
+          <Dialog open={isDialogOpen} onOpenChange={(open) => {
+            setIsDialogOpen(open);
+            if (!open) resetForm();
+          }}>
+            <DialogTrigger asChild>
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <Button size="sm" className="btn-primary shadow-lg">
+                  <Plus className="w-4 h-4 mr-1" />
+                  Ajouter une catégorie
+                </Button>
+              </motion.div>
+            </DialogTrigger>
           <Dialog open={isDialogOpen} onOpenChange={(open) => {
             setIsDialogOpen(open);
             if (!open) resetForm();
