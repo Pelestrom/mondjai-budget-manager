@@ -8,7 +8,6 @@ import {
   Target,
   Eye,
   EyeOff,
-  Bell,
   Flame,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -102,33 +101,22 @@ const Dashboard = () => {
   const item = { hidden: { y: 20, opacity: 0 }, show: { y: 0, opacity: 1 } };
 
   return (
-    <div className="min-h-screen pb-28 pt-6 bg-background">
+    <div className="min-h-screen pb-36 pt-20 bg-background overflow-y-auto">
       <motion.div variants={container} initial="hidden" animate="show" className="px-5 py-4 space-y-5">
 
         {/* HERO — Solde */}
         <motion.div variants={item}>
           <HeroCard className="p-6" pattern>
-            {/* Top bar: avatar + notif */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-full flex items-center justify-center font-bold text-white"
-                  style={{ background: "linear-gradient(135deg, #16A672, #3DFFB3)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.3)" }}>
-                  {firstLetter}
-                </div>
-                <div>
-                  <p className="text-[11px] uppercase tracking-widest text-white/60 font-medium">Bonjour</p>
-                  <p className="text-sm font-semibold text-white">{profile?.username || "—"}</p>
-                </div>
+            {/* Top row: avatar + greeting */}
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-full flex items-center justify-center font-bold text-white"
+                style={{ background: "linear-gradient(135deg, #16A672, #3DFFB3)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.3)" }}>
+                {firstLetter}
               </div>
-              <button
-                onClick={() => navigate("/notifications")}
-                className="relative h-11 w-11 rounded-full flex items-center justify-center bg-white/10 border border-white/15 backdrop-blur-md hover:bg-white/15 transition-colors"
-              >
-                <Bell className="w-5 h-5 text-white" />
-                {unreadCount > 0 && (
-                  <span className="absolute top-2 right-2 w-2.5 h-2.5 rounded-full bg-danger glow-pulse" />
-                )}
-              </button>
+              <div>
+                <p className="text-[11px] uppercase tracking-widest text-white/60 font-medium">Bonjour</p>
+                <p className="text-sm font-semibold text-white">{profile?.username || "—"}</p>
+              </div>
             </div>
 
             {/* Solde */}
