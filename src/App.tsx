@@ -3,10 +3,12 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { useState, useEffect } from "react";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { BottomTabBar } from "@/components/BottomTabBar";
 import { TopBar } from "@/components/TopBar";
+import { SplashScreen } from "@/components/SplashScreen";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
@@ -24,133 +26,46 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
-const AppContent = () => {
+const AppContent = () => (
+  <Routes>
+    <Route path="/login" element={<Login />} />
+    <Route path="/register" element={<Register />} />
+    <Route path="/" element={<ProtectedRoute><TopBar /><Dashboard /><BottomTabBar /></ProtectedRoute>} />
+    <Route path="/notifications" element={<ProtectedRoute><TopBar /><Notifications /></ProtectedRoute>} />
+    <Route path="/categories" element={<ProtectedRoute><TopBar /><Categories /></ProtectedRoute>} />
+    <Route path="/budgets" element={<ProtectedRoute><TopBar /><Budgets /><BottomTabBar /></ProtectedRoute>} />
+    <Route path="/stats" element={<ProtectedRoute><TopBar /><Stats /><BottomTabBar /></ProtectedRoute>} />
+    <Route path="/history" element={<ProtectedRoute><TopBar /><History /></ProtectedRoute>} />
+    <Route path="/add-transaction" element={<ProtectedRoute><TopBar /><AddTransaction /><BottomTabBar /></ProtectedRoute>} />
+    <Route path="/settings" element={<ProtectedRoute><TopBar /><Settings /></ProtectedRoute>} />
+    <Route path="/help" element={<ProtectedRoute><TopBar /><Help /></ProtectedRoute>} />
+    <Route path="/manage-transactions" element={<ProtectedRoute><TopBar /><ManageTransactions /></ProtectedRoute>} />
+    <Route path="/reports" element={<ProtectedRoute><TopBar /><Reports /></ProtectedRoute>} />
+    <Route path="*" element={<NotFound />} />
+  </Routes>
+);
+
+const App = () => {
+  const [showSplash, setShowSplash] = useState(true);
+  useEffect(() => {
+    const t = setTimeout(() => setShowSplash(false), 1700);
+    return () => clearTimeout(t);
+  }, []);
+
   return (
-    <>
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route
-          path="/"
-          element={
-            <ProtectedRoute>
-              <TopBar />
-              <Dashboard />
-              <BottomTabBar />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/notifications"
-          element={
-            <ProtectedRoute>
-              <TopBar />
-              <Notifications />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/categories"
-          element={
-            <ProtectedRoute>
-              <TopBar />
-              <Categories />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/budgets"
-          element={
-            <ProtectedRoute>
-              <TopBar />
-              <Budgets />
-              <BottomTabBar />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/stats"
-          element={
-            <ProtectedRoute>
-              <TopBar />
-              <Stats />
-              <BottomTabBar />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/history"
-          element={
-            <ProtectedRoute>
-              <TopBar />
-              <History />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/add-transaction"
-          element={
-            <ProtectedRoute>
-              <TopBar />
-              <AddTransaction />
-              <BottomTabBar />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/settings"
-          element={
-            <ProtectedRoute>
-              <TopBar />
-              <Settings />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/help"
-          element={
-            <ProtectedRoute>
-              <TopBar />
-              <Help />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/manage-transactions"
-          element={
-            <ProtectedRoute>
-              <TopBar />
-              <ManageTransactions />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/reports"
-          element={
-            <ProtectedRoute>
-              <TopBar />
-              <Reports />
-            </ProtectedRoute>
-          }
-        />
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    </>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          {showSplash && <SplashScreen />}
+          <BrowserRouter>
+            <AppContent />
+          </BrowserRouter>
+        </TooltipProvider>
+      </AuthProvider>
+    </QueryClientProvider>
   );
 };
-
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <AppContent />
-        </BrowserRouter>
-      </TooltipProvider>
-    </AuthProvider>
-  </QueryClientProvider>
-);
 
 export default App;
