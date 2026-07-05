@@ -8,7 +8,6 @@ import {
   Target,
   Eye,
   EyeOff,
-  Bell,
   Flame,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
