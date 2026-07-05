@@ -153,11 +153,16 @@ const Reports = () => {
         accent: [number, number, number], soft: [number, number, number],
         arrow: "up" | "down" | "wallet"
       ) => {
-        // Shadow
-        pdf.setFillColor(0, 0, 0);
-        pdf.setGState(new (pdf as any).GState({ opacity: 0.06 }));
-        pdf.roundedRect(x, y + 1, cardW, cardH, 3, 3, "F");
-        pdf.setGState(new (pdf as any).GState({ opacity: 1 }));
+        // Soft shadow (below card)
+        try {
+          const GState = (pdf as any).GState;
+          if (GState) {
+            (pdf as any).setGState(new GState({ opacity: 0.08 }));
+            pdf.setFillColor(0, 0, 0);
+            pdf.roundedRect(x, y + 1.2, cardW, cardH, 3, 3, "F");
+            (pdf as any).setGState(new GState({ opacity: 1 }));
+          }
+        } catch { /* ignore */ }
         // Card
         pdf.setFillColor(...COLORS.white);
         pdf.roundedRect(x, y, cardW, cardH, 3, 3, "F");
