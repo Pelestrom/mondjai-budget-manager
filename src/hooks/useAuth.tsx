@@ -100,6 +100,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signOut = async () => {
+    localStorage.removeItem("mondjai-remember-me");
     await supabase.auth.signOut();
     setProfile(null);
   };
