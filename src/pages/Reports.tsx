@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { useTransactions } from "@/hooks/useTransactions";
 import { useBudgets } from "@/hooks/useBudgets";
 import { useCategories } from "@/hooks/useCategories";
+import { useFixedExpenses } from "@/hooks/useFixedExpenses";
 import { useAuth } from "@/hooks/useAuth";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
@@ -20,6 +21,7 @@ const Reports = () => {
   const { transactions } = useTransactions();
   const { budgets, globalBudget } = useBudgets();
   const { categories } = useCategories();
+  const { fixedExpenses } = useFixedExpenses();
   const { profile } = useAuth();
   const currency = profile?.currency || "FCFA";
 
@@ -27,365 +29,408 @@ const Reports = () => {
   const [endDate, setEndDate] = useState(format(endOfMonth(new Date()), "yyyy-MM-dd"));
   const [isGenerating, setIsGenerating] = useState(false);
 
-  const filterTransactionsByDate = () => {
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    return transactions.filter((t) => {
-      const tDate = new Date(t.date);
-      return tDate >= start && tDate <= end;
-    });
-  };
-
-  const calculateStats = (filtered: typeof transactions) => {
-    let income = 0;
-    let expenses = 0;
-
-    filtered.forEach((t) => {
-      if (t.type === "income") {
-        income += t.amount;
-      } else {
-        expenses += t.amount;
-      }
-    });
-
-    const statsByCategory = categories.map((cat) => {
-      const catTransactions = filtered.filter((t) => t.category === cat.id || t.category === cat.name);
-      const expensesTotal = catTransactions
-        .filter((t) => t.type === "expense")
-        .reduce((sum, t) => sum + t.amount, 0);
-      return {
-        name: cat.name,
-        total: expensesTotal,
-        count: catTransactions.length,
-        color: cat.color || "#00A86B",
-      };
-    }).filter((s) => s.total > 0).sort((a, b) => b.total - a.total);
-
-    return { income, expenses, balance: income - expenses, statsByCategory };
-  };
-
-  // Brand palette (mirrors index.css design tokens)
   const COLORS = {
-    primary: [0, 168, 107] as [number, number, number],     // #00A86B
-    secondary: [242, 201, 76] as [number, number, number],  // #F2C94C
-    danger: [239, 68, 68] as [number, number, number],      // #EF4444
-    dark: [26, 26, 26] as [number, number, number],         // #1A1A1A
-    muted: [115, 115, 115] as [number, number, number],
-    bgSoft: [248, 249, 250] as [number, number, number],    // #F8F9FA
-    border: [229, 229, 229] as [number, number, number],
+    primary: [22, 166, 114] as [number, number, number],
+    primaryDeep: [11, 61, 46] as [number, number, number],
+    primarySoft: [227, 251, 241] as [number, number, number],
+    danger: [240, 68, 82] as [number, number, number],
+    dangerSoft: [253, 232, 234] as [number, number, number],
+    warning: [245, 166, 35] as [number, number, number],
+    dark: [13, 31, 25] as [number, number, number],
+    muted: [107, 124, 118] as [number, number, number],
+    bgSoft: [247, 249, 248] as [number, number, number],
+    border: [228, 235, 232] as [number, number, number],
+    white: [255, 255, 255] as [number, number, number],
   };
 
   const hexToRgb = (hex: string): [number, number, number] => {
     const clean = hex.replace("#", "");
     const full = clean.length === 3 ? clean.split("").map((c) => c + c).join("") : clean;
-    const num = parseInt(full, 16);
-    return [(num >> 16) & 255, (num >> 8) & 255, num & 255];
+    const n = parseInt(full, 16);
+    return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
   };
 
-  const fmt = (n: number) => `${n.toLocaleString("fr-FR", { maximumFractionDigits: 0 })} ${currency}`;
+  const fmt = (n: number) => `${Math.round(n).toLocaleString("fr-FR")} ${currency}`;
 
-  const loadLogoDataUrl = (): Promise<string | null> =>
+  const loadLogo = (): Promise<string | null> =>
     new Promise((resolve) => {
       const img = new Image();
       img.crossOrigin = "anonymous";
       img.onload = () => {
         try {
-          const canvas = document.createElement("canvas");
-          canvas.width = img.naturalWidth;
-          canvas.height = img.naturalHeight;
-          const ctx = canvas.getContext("2d");
-          if (!ctx) return resolve(null);
-          ctx.drawImage(img, 0, 0);
-          resolve(canvas.toDataURL("image/png"));
-        } catch {
-          resolve(null);
-        }
+          const c = document.createElement("canvas");
+          c.width = img.naturalWidth; c.height = img.naturalHeight;
+          c.getContext("2d")!.drawImage(img, 0, 0);
+          resolve(c.toDataURL("image/png"));
+        } catch { resolve(null); }
       };
       img.onerror = () => resolve(null);
       img.src = mondjaiLogo;
     });
 
+  const filterByDate = () => {
+    const s = new Date(startDate); const e = new Date(endDate);
+    return transactions.filter((t) => {
+      const d = new Date(t.date);
+      return d >= s && d <= e;
+    });
+  };
+
+  const calcStats = (filtered: typeof transactions) => {
+    let income = 0, expenses = 0;
+    filtered.forEach((t) => {
+      if (t.type === "income") income += Number(t.amount);
+      else expenses += Number(t.amount);
+    });
+    const byCategory = categories.map((cat) => {
+      const list = filtered.filter((t) => t.type === "expense" && (t.category === cat.id || t.category === cat.name));
+      return { name: cat.name, total: list.reduce((s, t) => s + Number(t.amount), 0), color: cat.color || "#16A672" };
+    }).filter((x) => x.total > 0).sort((a, b) => b.total - a.total);
+    return { income, expenses, balance: income - expenses, byCategory };
+  };
+
   const generatePDF = async () => {
     try {
       setIsGenerating(true);
-      const filtered = filterTransactionsByDate();
-      const stats = calculateStats(filtered);
+      const filtered = filterByDate();
+      const stats = calcStats(filtered);
+      const fixedIncomes = filtered.filter((t) => t.type === "income" && t.is_fixed);
+      const fixedExpsInPeriod = filtered.filter((t) => t.type === "expense" && t.is_fixed);
+      const totalFixedIn = fixedIncomes.reduce((s, t) => s + Number(t.amount), 0);
+      const totalFixedExp = fixedExpsInPeriod.reduce((s, t) => s + Number(t.amount), 0);
 
       const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const pageHeight = pdf.internal.pageSize.getHeight();
-      const margin = 15;
+      const W = pdf.internal.pageSize.getWidth();
+      const H = pdf.internal.pageSize.getHeight();
+      const M = 15;
       let y = 0;
 
-      // ---------- HEADER (green band with logo) ----------
+      // ================= HEADER =================
+      const headerH = 30;
+      pdf.setFillColor(...COLORS.primaryDeep);
+      pdf.rect(0, 0, W, headerH, "F");
+      // slim accent bar bottom
       pdf.setFillColor(...COLORS.primary);
-      pdf.rect(0, 0, pageWidth, 40, "F");
+      pdf.rect(0, headerH, W, 1.2, "F");
 
-      const logoData = await loadLogoDataUrl();
+      const logoData = await loadLogo();
       if (logoData) {
-        try {
-          pdf.addImage(logoData, "PNG", margin, 10, 22, 22);
-        } catch {
-          /* ignore */
-        }
+        try { pdf.addImage(logoData, "PNG", M, 6, 18, 18); } catch { /**/ }
       }
 
-      pdf.setTextColor(255, 255, 255);
-      pdf.setFontSize(20);
+      // Title block left-aligned next to logo
+      pdf.setTextColor(...COLORS.white);
       pdf.setFont("helvetica", "bold");
-      pdf.text("Bilan Financier", pageWidth - margin, 18, { align: "right" });
-
-      pdf.setFontSize(10);
+      pdf.setFontSize(16);
+      pdf.text("Bilan Financier", M + 22, 13);
       pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(9);
       pdf.text(
         `${format(new Date(startDate), "dd MMM yyyy", { locale: fr })} → ${format(new Date(endDate), "dd MMM yyyy", { locale: fr })}`,
-        pageWidth - margin,
-        26,
-        { align: "right" }
+        M + 22, 19
       );
       if (profile?.username) {
-        pdf.setFontSize(9);
-        pdf.text(profile.username, pageWidth - margin, 33, { align: "right" });
+        pdf.setFontSize(8.5);
+        pdf.setTextColor(220, 245, 235);
+        pdf.text(profile.username, M + 22, 24.5);
       }
 
-      y = 52;
+      y = headerH + 10;
 
-      // ---------- SUMMARY CARDS ----------
+      // ================= SUMMARY CARDS =================
       pdf.setTextColor(...COLORS.dark);
-      pdf.setFontSize(13);
       pdf.setFont("helvetica", "bold");
-      pdf.text("Résumé", margin, y);
-      y += 6;
+      pdf.setFontSize(11);
+      pdf.text("Résumé de la période", M, y);
+      y += 5;
 
-      const cardW = (pageWidth - margin * 2 - 8) / 3;
-      const cardH = 24;
+      const gap = 4;
+      const cardW = (W - M * 2 - gap * 2) / 3;
+      const cardH = 26;
 
-      const drawCard = (
-        x: number,
-        label: string,
-        value: string,
-        color: [number, number, number]
+      const drawSummaryCard = (
+        x: number, label: string, value: string,
+        accent: [number, number, number], soft: [number, number, number],
+        arrow: "up" | "down" | "wallet"
       ) => {
-        pdf.setFillColor(color[0], color[1], color[2]);
+        // Shadow
+        pdf.setFillColor(0, 0, 0);
+        pdf.setGState(new (pdf as any).GState({ opacity: 0.06 }));
+        pdf.roundedRect(x, y + 1, cardW, cardH, 3, 3, "F");
+        pdf.setGState(new (pdf as any).GState({ opacity: 1 }));
+        // Card
+        pdf.setFillColor(...COLORS.white);
         pdf.roundedRect(x, y, cardW, cardH, 3, 3, "F");
-        pdf.setTextColor(255, 255, 255);
-        pdf.setFontSize(8);
+        pdf.setDrawColor(...COLORS.border);
+        pdf.roundedRect(x, y, cardW, cardH, 3, 3, "S");
+        // Icon circle
+        pdf.setFillColor(...soft);
+        pdf.circle(x + 8, y + 9, 4.5, "F");
+        pdf.setDrawColor(...accent);
+        pdf.setLineWidth(0.6);
+        // draw small arrow glyph
+        const cx = x + 8, cy = y + 9;
+        pdf.setDrawColor(...accent);
+        if (arrow === "up") {
+          pdf.line(cx - 2, cy + 1.5, cx + 2, cy - 2);
+          pdf.line(cx + 2, cy - 2, cx - 0.3, cy - 2);
+          pdf.line(cx + 2, cy - 2, cx + 2, cy + 0.3);
+        } else if (arrow === "down") {
+          pdf.line(cx - 2, cy - 1.5, cx + 2, cy + 2);
+          pdf.line(cx + 2, cy + 2, cx - 0.3, cy + 2);
+          pdf.line(cx + 2, cy + 2, cx + 2, cy - 0.3);
+        } else {
+          pdf.roundedRect(cx - 2.2, cy - 1.6, 4.4, 3.2, 0.4, 0.4, "S");
+          pdf.line(cx + 0.4, cy - 0.2, cx + 1.6, cy - 0.2);
+        }
+        pdf.setLineWidth(0.2);
+        // Label
         pdf.setFont("helvetica", "normal");
-        pdf.text(label, x + 4, y + 7);
-        pdf.setFontSize(13);
+        pdf.setFontSize(7.5);
+        pdf.setTextColor(...COLORS.muted);
+        pdf.text(label.toUpperCase(), x + 15, y + 8);
+        // Value
         pdf.setFont("helvetica", "bold");
-        pdf.text(value, x + 4, y + 17);
+        pdf.setFontSize(12);
+        pdf.setTextColor(accent[0], accent[1], accent[2]);
+        pdf.text(value, x + 15, y + 16);
+        // Bottom stripe
+        pdf.setFillColor(accent[0], accent[1], accent[2]);
+        pdf.rect(x, y + cardH - 1.5, cardW, 1.5, "F");
       };
 
-      drawCard(margin, "Entrées", fmt(stats.income), COLORS.primary);
-      drawCard(margin + cardW + 4, "Dépenses", fmt(stats.expenses), COLORS.danger);
-      drawCard(
-        margin + (cardW + 4) * 2,
-        "Solde",
-        fmt(stats.balance),
-        stats.balance >= 0 ? COLORS.primary : COLORS.danger
+      drawSummaryCard(M, "Entrées", fmt(stats.income), COLORS.primary, COLORS.primarySoft, "up");
+      drawSummaryCard(M + cardW + gap, "Dépenses", fmt(stats.expenses), COLORS.danger, COLORS.dangerSoft, "down");
+      drawSummaryCard(
+        M + (cardW + gap) * 2, "Solde", fmt(stats.balance),
+        stats.balance >= 0 ? COLORS.primary : COLORS.danger,
+        stats.balance >= 0 ? COLORS.primarySoft : COLORS.dangerSoft,
+        "wallet"
       );
-
       y += cardH + 4;
-      pdf.setTextColor(...COLORS.muted);
+
+      pdf.setFont("helvetica", "normal");
       pdf.setFontSize(8);
-      pdf.text(
-        `${filtered.length} transaction(s) sur la période`,
-        margin,
-        y
-      );
-      y += 10;
+      pdf.setTextColor(...COLORS.muted);
+      pdf.text(`${filtered.length} transaction(s) sur la période`, M, y);
+      y += 8;
 
-      // ---------- BAR CHART: Categories ----------
-      if (stats.statsByCategory.length > 0) {
+      // ================= PIE CHART: repartition catégories =================
+      if (stats.byCategory.length > 0) {
         pdf.setTextColor(...COLORS.dark);
-        pdf.setFontSize(13);
         pdf.setFont("helvetica", "bold");
-        pdf.text("Dépenses par catégorie", margin, y);
+        pdf.setFontSize(11);
+        pdf.text("Répartition des dépenses par catégorie", M, y);
         y += 6;
 
-        const top = stats.statsByCategory.slice(0, 8);
-        const maxVal = Math.max(...top.map((s) => s.total));
-        const chartW = pageWidth - margin * 2;
-        const rowH = 9;
-        const labelW = 40;
-        const valueW = 32;
-        const barAreaW = chartW - labelW - valueW - 4;
-
-        // Soft background
+        const chartBoxH = 55;
+        // background card
         pdf.setFillColor(...COLORS.bgSoft);
-        pdf.roundedRect(margin, y, chartW, top.length * rowH + 6, 3, 3, "F");
-        y += 4;
+        pdf.roundedRect(M, y, W - M * 2, chartBoxH, 3, 3, "F");
 
-        top.forEach((s) => {
-          const ratio = maxVal > 0 ? s.total / maxVal : 0;
-          const barW = Math.max(1, ratio * barAreaW);
+        const cx = M + 30, cy = y + chartBoxH / 2;
+        const r = 20;
+        const total = stats.byCategory.reduce((s, c) => s + c.total, 0);
+        let a0 = -Math.PI / 2;
+        const slices = stats.byCategory.slice(0, 8);
+        slices.forEach((s) => {
+          const frac = s.total / total;
+          const a1 = a0 + frac * Math.PI * 2;
           const rgb = hexToRgb(s.color);
-
-          // Label
-          pdf.setTextColor(...COLORS.dark);
-          pdf.setFontSize(8);
-          pdf.setFont("helvetica", "normal");
-          const labelText = s.name.length > 18 ? s.name.slice(0, 17) + "…" : s.name;
-          pdf.text(labelText, margin + 3, y + 5);
-
-          // Bar background
-          pdf.setFillColor(...COLORS.border);
-          pdf.roundedRect(margin + labelW, y + 1.5, barAreaW, rowH - 4, 1.2, 1.2, "F");
-
-          // Bar fill
           pdf.setFillColor(rgb[0], rgb[1], rgb[2]);
-          pdf.roundedRect(margin + labelW, y + 1.5, barW, rowH - 4, 1.2, 1.2, "F");
-
-          // Value
-          pdf.setTextColor(...COLORS.dark);
-          pdf.setFont("helvetica", "bold");
-          pdf.text(fmt(s.total), margin + chartW - 3, y + 5, { align: "right" });
-
-          y += rowH;
-        });
-        y += 6;
-      }
-
-      // ---------- BUDGETS ----------
-      const allBudgets = [
-        ...(globalBudget
-          ? [{ name: "Budget Global", amount: Number(globalBudget.amount), period: globalBudget.period, spent: stats.expenses }]
-          : []),
-        ...budgets
-          .filter((b) => b.category_id)
-          .map((b) => {
-            const cat = categories.find((c) => c.id === b.category_id);
-            const spent = filtered
-              .filter((t) => t.type === "expense" && (t.category === b.category_id || t.category === cat?.name))
-              .reduce((sum, t) => sum + t.amount, 0);
-            return {
-              name: cat?.name || "Catégorie",
-              amount: Number(b.amount),
-              period: b.period,
-              spent,
-            };
-          }),
-      ];
-
-      if (allBudgets.length > 0) {
-        if (y > pageHeight - 60) {
-          pdf.addPage();
-          y = 20;
-        }
-
-        pdf.setTextColor(...COLORS.dark);
-        pdf.setFontSize(13);
-        pdf.setFont("helvetica", "bold");
-        pdf.text("Suivi des budgets", margin, y);
-        y += 7;
-
-        allBudgets.forEach((b) => {
-          if (y > pageHeight - 25) {
-            pdf.addPage();
-            y = 20;
+          // Approximate pie slice via triangles (jsPDF has no path fill for arcs)
+          const steps = Math.max(6, Math.ceil((a1 - a0) * 12));
+          const pts: [number, number][] = [[cx, cy]];
+          for (let i = 0; i <= steps; i++) {
+            const a = a0 + (i / steps) * (a1 - a0);
+            pts.push([cx + Math.cos(a) * r, cy + Math.sin(a) * r]);
           }
-          const pct = b.amount > 0 ? Math.min(100, (b.spent / b.amount) * 100) : 0;
-          const overBudget = b.spent > b.amount;
-          const fill = overBudget ? COLORS.danger : pct >= 80 ? COLORS.secondary : COLORS.primary;
+          // Draw triangles from center
+          for (let i = 1; i < pts.length - 1; i++) {
+            pdf.triangle(cx, cy, pts[i][0], pts[i][1], pts[i + 1][0], pts[i + 1][1], "F");
+          }
+          a0 = a1;
+        });
+        // Donut hole
+        pdf.setFillColor(...COLORS.bgSoft);
+        pdf.circle(cx, cy, 9, "F");
+        pdf.setTextColor(...COLORS.dark);
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(9);
+        pdf.text(`${slices.length}`, cx, cy - 0.5, { align: "center" });
+        pdf.setFont("helvetica", "normal");
+        pdf.setFontSize(6.5);
+        pdf.setTextColor(...COLORS.muted);
+        pdf.text("catégories", cx, cy + 3, { align: "center" });
 
-          pdf.setFontSize(9);
-          pdf.setFont("helvetica", "bold");
+        // Legend
+        const lx = M + 62;
+        let ly = y + 6;
+        slices.forEach((s) => {
+          const rgb = hexToRgb(s.color);
+          pdf.setFillColor(rgb[0], rgb[1], rgb[2]);
+          pdf.roundedRect(lx, ly, 3.5, 3.5, 0.6, 0.6, "F");
           pdf.setTextColor(...COLORS.dark);
-          pdf.text(b.name, margin, y);
+          pdf.setFont("helvetica", "normal");
+          pdf.setFontSize(8);
+          const name = s.name.length > 22 ? s.name.slice(0, 21) + "…" : s.name;
+          pdf.text(name, lx + 6, ly + 3);
+          pdf.setFont("helvetica", "bold");
+          const pct = ((s.total / total) * 100).toFixed(0);
+          pdf.text(`${pct}%`, W - M - 22, ly + 3, { align: "right" });
           pdf.setFont("helvetica", "normal");
           pdf.setTextColor(...COLORS.muted);
-          pdf.text(`${fmt(b.spent)} / ${fmt(b.amount)}  •  ${pct.toFixed(0)}%`, pageWidth - margin, y, {
-            align: "right",
-          });
+          pdf.text(fmt(s.total), W - M - 3, ly + 3, { align: "right" });
+          ly += 5.5;
+        });
+        y += chartBoxH + 6;
+      }
 
+      // ================= FIXED SECTION =================
+      if (fixedIncomes.length > 0 || fixedExpsInPeriod.length > 0 || fixedExpenses.length > 0) {
+        if (y > H - 60) { pdf.addPage(); y = 20; }
+        pdf.setTextColor(...COLORS.dark);
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(11);
+        pdf.text("Entrées & dépenses fixes", M, y);
+        y += 5;
+        // 2 mini cards
+        const mw = (W - M * 2 - 4) / 2;
+        pdf.setFillColor(...COLORS.primarySoft);
+        pdf.roundedRect(M, y, mw, 16, 2.5, 2.5, "F");
+        pdf.setTextColor(...COLORS.primaryDeep);
+        pdf.setFont("helvetica", "normal"); pdf.setFontSize(7.5);
+        pdf.text("ENTRÉES FIXES", M + 3, y + 6);
+        pdf.setFont("helvetica", "bold"); pdf.setFontSize(11);
+        pdf.text(fmt(totalFixedIn), M + 3, y + 12.5);
+
+        pdf.setFillColor(...COLORS.dangerSoft);
+        pdf.roundedRect(M + mw + 4, y, mw, 16, 2.5, 2.5, "F");
+        pdf.setTextColor(139, 30, 40);
+        pdf.setFont("helvetica", "normal"); pdf.setFontSize(7.5);
+        pdf.text("DÉPENSES FIXES", M + mw + 7, y + 6);
+        pdf.setFont("helvetica", "bold"); pdf.setFontSize(11);
+        pdf.text(fmt(totalFixedExp), M + mw + 7, y + 12.5);
+        y += 20;
+
+        if (fixedExpenses.length > 0) {
+          pdf.setTextColor(...COLORS.muted);
+          pdf.setFont("helvetica", "normal");
+          pdf.setFontSize(8);
+          pdf.text(`Modèles enregistrés : ${fixedExpenses.length}`, M, y);
+          y += 6;
+        }
+      }
+
+      // ================= BUDGETS =================
+      const allBudgets = [
+        ...(globalBudget ? [{ name: "Budget Global", amount: Number(globalBudget.amount), spent: stats.expenses }] : []),
+        ...budgets.filter((b) => b.category_id).map((b) => {
+          const cat = categories.find((c) => c.id === b.category_id);
+          const spent = filtered.filter((t) => t.type === "expense" && (t.category === b.category_id || t.category === cat?.name)).reduce((s, t) => s + Number(t.amount), 0);
+          return { name: cat?.name || "Catégorie", amount: Number(b.amount), spent };
+        }),
+      ];
+      if (allBudgets.length > 0) {
+        if (y > H - 50) { pdf.addPage(); y = 20; }
+        pdf.setTextColor(...COLORS.dark);
+        pdf.setFont("helvetica", "bold"); pdf.setFontSize(11);
+        pdf.text("Suivi des budgets", M, y);
+        y += 6;
+        allBudgets.forEach((b) => {
+          if (y > H - 25) { pdf.addPage(); y = 20; }
+          const pct = b.amount > 0 ? Math.min(100, (b.spent / b.amount) * 100) : 0;
+          const fill = b.spent > b.amount ? COLORS.danger : pct >= 80 ? COLORS.warning : COLORS.primary;
+          pdf.setFontSize(9); pdf.setFont("helvetica", "bold"); pdf.setTextColor(...COLORS.dark);
+          pdf.text(b.name, M, y);
+          pdf.setFont("helvetica", "normal"); pdf.setTextColor(...COLORS.muted);
+          pdf.text(`${fmt(b.spent)} / ${fmt(b.amount)}  •  ${pct.toFixed(0)}%`, W - M, y, { align: "right" });
           y += 2.5;
-          const barW = pageWidth - margin * 2;
-          pdf.setFillColor(...COLORS.border);
-          pdf.roundedRect(margin, y, barW, 3, 1.5, 1.5, "F");
-          pdf.setFillColor(fill[0], fill[1], fill[2]);
-          pdf.roundedRect(margin, y, (barW * pct) / 100, 3, 1.5, 1.5, "F");
-
+          pdf.setFillColor(...COLORS.border); pdf.roundedRect(M, y, W - M * 2, 3, 1.5, 1.5, "F");
+          pdf.setFillColor(fill[0], fill[1], fill[2]); pdf.roundedRect(M, y, ((W - M * 2) * pct) / 100, 3, 1.5, 1.5, "F");
           y += 9;
         });
       }
 
-      // ---------- TRANSACTIONS LIST (last page section) ----------
+      // ================= TRANSACTIONS TABLE =================
       if (filtered.length > 0) {
-        if (y > pageHeight - 50) {
-          pdf.addPage();
-          y = 20;
-        }
-
+        if (y > H - 60) { pdf.addPage(); y = 20; }
         pdf.setTextColor(...COLORS.dark);
-        pdf.setFontSize(13);
-        pdf.setFont("helvetica", "bold");
-        pdf.text("Détail des transactions", margin, y);
+        pdf.setFont("helvetica", "bold"); pdf.setFontSize(11);
+        pdf.text("Détail des transactions", M, y);
         y += 6;
 
-        // Table header
-        pdf.setFillColor(...COLORS.primary);
-        pdf.rect(margin, y, pageWidth - margin * 2, 7, "F");
-        pdf.setTextColor(255, 255, 255);
-        pdf.setFontSize(8);
-        pdf.setFont("helvetica", "bold");
-        pdf.text("Date", margin + 2, y + 5);
-        pdf.text("Catégorie", margin + 28, y + 5);
-        pdf.text("Type", margin + 80, y + 5);
-        pdf.text("Montant", pageWidth - margin - 2, y + 5, { align: "right" });
-        y += 7;
+        const drawTableHeader = () => {
+          pdf.setFillColor(...COLORS.primaryDeep);
+          pdf.rect(M, y, W - M * 2, 8, "F");
+          pdf.setTextColor(...COLORS.white);
+          pdf.setFontSize(8); pdf.setFont("helvetica", "bold");
+          pdf.text("Date", M + 2, y + 5.3);
+          pdf.text("Catégorie", M + 26, y + 5.3);
+          pdf.text("Type", M + 78, y + 5.3);
+          pdf.text("Fixe", M + 100, y + 5.3);
+          pdf.text("Montant", W - M - 2, y + 5.3, { align: "right" });
+          y += 8;
+        };
+        drawTableHeader();
 
         const sorted = [...filtered].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
         sorted.forEach((t, i) => {
-          if (y > pageHeight - 15) {
-            pdf.addPage();
-            y = 20;
-          }
+          if (y > H - 22) { pdf.addPage(); y = 20; drawTableHeader(); }
           if (i % 2 === 0) {
             pdf.setFillColor(...COLORS.bgSoft);
-            pdf.rect(margin, y, pageWidth - margin * 2, 6, "F");
+            pdf.rect(M, y, W - M * 2, 6.5, "F");
           }
           pdf.setTextColor(...COLORS.dark);
-          pdf.setFontSize(8);
-          pdf.setFont("helvetica", "normal");
-          pdf.text(format(new Date(t.date), "dd/MM/yy"), margin + 2, y + 4);
-          const catName = (t.category || "—").slice(0, 22);
-          pdf.text(catName, margin + 28, y + 4);
+          pdf.setFontSize(8); pdf.setFont("helvetica", "normal");
+          pdf.text(format(new Date(t.date), "dd/MM/yy"), M + 2, y + 4.5);
+          const catName = (t.category || "—").slice(0, 26);
+          pdf.text(catName, M + 26, y + 4.5);
           pdf.setTextColor(...(t.type === "income" ? COLORS.primary : COLORS.danger));
-          pdf.text(t.type === "income" ? "Entrée" : "Dépense", margin + 80, y + 4);
+          pdf.text(t.type === "income" ? "Entrée" : "Dépense", M + 78, y + 4.5);
+          pdf.setTextColor(...COLORS.muted);
+          pdf.text(t.is_fixed ? "Oui" : "—", M + 100, y + 4.5);
           pdf.setFont("helvetica", "bold");
-          pdf.text(`${t.type === "income" ? "+" : "-"}${fmt(t.amount)}`, pageWidth - margin - 2, y + 4, {
-            align: "right",
-          });
-          y += 6;
+          pdf.setTextColor(...(t.type === "income" ? COLORS.primary : COLORS.danger));
+          pdf.text(`${t.type === "income" ? "+" : "-"}${fmt(Number(t.amount))}`, W - M - 2, y + 4.5, { align: "right" });
+          y += 6.5;
         });
+
+        // Totals row
+        if (y > H - 22) { pdf.addPage(); y = 20; }
+        pdf.setFillColor(...COLORS.primaryDeep);
+        pdf.rect(M, y, W - M * 2, 9, "F");
+        pdf.setTextColor(...COLORS.white);
+        pdf.setFont("helvetica", "bold"); pdf.setFontSize(9);
+        pdf.text("TOTAL", M + 2, y + 6);
+        pdf.text(`Entrées ${fmt(stats.income)}`, M + 40, y + 6);
+        pdf.text(`Dépenses ${fmt(stats.expenses)}`, M + 95, y + 6);
+        pdf.text(`Solde ${fmt(stats.balance)}`, W - M - 2, y + 6, { align: "right" });
+        y += 12;
       }
 
-      // ---------- FOOTER on every page ----------
-      const totalPages = pdf.getNumberOfPages();
-      for (let p = 1; p <= totalPages; p++) {
+      // ================= FOOTER (every page) =================
+      const total = pdf.getNumberOfPages();
+      for (let p = 1; p <= total; p++) {
         pdf.setPage(p);
         pdf.setDrawColor(...COLORS.border);
-        pdf.line(margin, pageHeight - 12, pageWidth - margin, pageHeight - 12);
-        pdf.setFontSize(7);
-        pdf.setTextColor(...COLORS.muted);
-        pdf.setFont("helvetica", "normal");
-        pdf.text(
-          `MonDjai • Généré le ${format(new Date(), "dd MMM yyyy 'à' HH:mm", { locale: fr })}`,
-          margin,
-          pageHeight - 7
-        );
-        pdf.text(`Page ${p} / ${totalPages}`, pageWidth - margin, pageHeight - 7, { align: "right" });
+        pdf.setLineWidth(0.2);
+        pdf.line(M, H - 12, W - M, H - 12);
+        if (logoData) {
+          try { pdf.addImage(logoData, "PNG", M, H - 9, 5, 5); } catch { /**/ }
+        }
+        pdf.setFontSize(7); pdf.setTextColor(...COLORS.muted); pdf.setFont("helvetica", "normal");
+        pdf.text(`MonDjai • ${format(new Date(), "dd MMM yyyy 'à' HH:mm", { locale: fr })}`, M + 7, H - 5.5);
+        pdf.text(`Page ${p} / ${total}`, W - M, H - 5.5, { align: "right" });
       }
 
       const fileName = `bilan_mondjai_${format(new Date(startDate), "yyyy-MM-dd")}_${format(new Date(endDate), "yyyy-MM-dd")}.pdf`;
       pdf.save(fileName);
-
       toast.success("Bilan téléchargé avec succès");
-      setIsGenerating(false);
     } catch (error) {
-      console.error("Error generating PDF:", error);
+      console.error("PDF error:", error);
       toast.error("Erreur lors de la génération du bilan");
+    } finally {
       setIsGenerating(false);
     }
   };
@@ -393,115 +438,61 @@ const Reports = () => {
   return (
     <div className="min-h-screen pb-8 pt-20">
       <div className="p-6 space-y-6">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex items-center gap-4"
-        >
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate(-1)}
-            className="shrink-0"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-4">
+          <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="shrink-0"><ArrowLeft className="w-5 h-5" /></Button>
           <div>
             <h1 className="text-2xl font-bold text-foreground">Bilans</h1>
-            <p className="text-sm text-muted-foreground">
-              Téléchargez vos bilans financiers en PDF
-            </p>
+            <p className="text-sm text-muted-foreground">Téléchargez vos bilans financiers en PDF</p>
           </div>
         </motion.div>
 
-        {/* Date Range Selection */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-        >
-          <Card className="p-6 card-gradient">
-            <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-              <Calendar className="w-5 h-5" />
-              Période du rapport
-            </h2>
-            <div className="space-y-4">
+        <Card className="p-6">
+          <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2"><Calendar className="w-5 h-5" />Période du rapport</h2>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">Date de début</label>
+                <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="input-field" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">Date de fin</label>
+                <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="input-field" />
+              </div>
+            </div>
+            <Button onClick={generatePDF} disabled={isGenerating} className="w-full btn-primary">
+              <Download className="w-4 h-4 mr-2" />
+              {isGenerating ? "Génération en cours..." : "Télécharger le bilan"}
+            </Button>
+          </div>
+        </Card>
+
+        <Card className="p-6">
+          <h2 className="text-lg font-semibold text-foreground mb-4">Aperçu du rapport</h2>
+          {(() => {
+            const filtered = filterByDate();
+            const stats = calcStats(filtered);
+            return (
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2">Date de début</label>
-                  <Input
-                    type="date"
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
-                    className="input-field"
-                  />
+                <div className="p-4 rounded-xl bg-success/10 border border-success/20">
+                  <p className="text-sm text-muted-foreground">Entrées</p>
+                  <p className="text-2xl font-bold text-success font-amount">{stats.income.toLocaleString("fr-FR")}</p>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2">Date de fin</label>
-                  <Input
-                    type="date"
-                    value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
-                    className="input-field"
-                  />
+                <div className="p-4 rounded-xl bg-danger/10 border border-danger/20">
+                  <p className="text-sm text-muted-foreground">Dépenses</p>
+                  <p className="text-2xl font-bold text-danger font-amount">{stats.expenses.toLocaleString("fr-FR")}</p>
+                </div>
+                <div className="p-4 rounded-xl bg-primary/10 border border-primary/20">
+                  <p className="text-sm text-muted-foreground">Solde</p>
+                  <p className={`text-2xl font-bold font-amount ${stats.balance >= 0 ? "text-success" : "text-danger"}`}>{stats.balance.toLocaleString("fr-FR")}</p>
+                </div>
+                <div className="p-4 rounded-xl bg-muted border border-border">
+                  <p className="text-sm text-muted-foreground">Transactions</p>
+                  <p className="text-2xl font-bold text-foreground font-amount">{filtered.length}</p>
                 </div>
               </div>
-              <Button
-                onClick={generatePDF}
-                disabled={isGenerating}
-                className="w-full btn-primary"
-              >
-                <Download className="w-4 h-4 mr-2" />
-                {isGenerating ? "Génération en cours..." : "Télécharger le bilan"}
-              </Button>
-            </div>
-          </Card>
-        </motion.div>
-
-        {/* Report Summary Preview */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-        >
-          <Card className="p-6 card-gradient">
-            <h2 className="text-lg font-semibold text-foreground mb-4">Aperçu du rapport</h2>
-            <div className="space-y-4">
-              {(() => {
-                const filtered = filterTransactionsByDate();
-                const stats = calculateStats(filtered);
-                return (
-                  <>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="p-4 rounded-xl bg-success/10 border border-success/20">
-                        <p className="text-sm text-muted-foreground">Entrées</p>
-                        <p className="text-2xl font-bold text-success">
-                          {stats.income.toFixed(2)}
-                        </p>
-                      </div>
-                      <div className="p-4 rounded-xl bg-danger/10 border border-danger/20">
-                        <p className="text-sm text-muted-foreground">Dépenses</p>
-                        <p className="text-2xl font-bold text-danger">
-                          {stats.expenses.toFixed(2)}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="p-4 rounded-xl bg-primary/10 border border-primary/20">
-                      <p className="text-sm text-muted-foreground">Solde</p>
-                      <p className={`text-2xl font-bold ${stats.balance >= 0 ? "text-success" : "text-danger"}`}>
-                        {stats.balance.toFixed(2)}
-                      </p>
-                    </div>
-                    <div className="p-4 rounded-xl bg-muted border border-border">
-                      <p className="text-sm text-muted-foreground">Nombre de transactions</p>
-                      <p className="text-2xl font-bold text-foreground">{filtered.length}</p>
-                    </div>
-                  </>
-                );
-              })()}
-            </div>
-          </Card>
-        </motion.div>
+            );
+          })()}
+        </Card>
       </div>
     </div>
   );
