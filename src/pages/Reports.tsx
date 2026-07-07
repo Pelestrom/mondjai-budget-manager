@@ -59,7 +59,7 @@ const Reports = () => {
   };
   const fmt = (n: number) => `${formatNumber(n)} ${currency}`;
 
-  const loadLogo = (): Promise<string | null> =>
+  const loadLogo = (): Promise<{ data: string; w: number; h: number } | null> =>
     new Promise((resolve) => {
       const img = new Image();
       img.crossOrigin = "anonymous";
@@ -68,7 +68,7 @@ const Reports = () => {
           const c = document.createElement("canvas");
           c.width = img.naturalWidth; c.height = img.naturalHeight;
           c.getContext("2d")!.drawImage(img, 0, 0);
-          resolve(c.toDataURL("image/png"));
+          resolve({ data: c.toDataURL("image/png"), w: img.naturalWidth, h: img.naturalHeight });
         } catch { resolve(null); }
       };
       img.onerror = () => resolve(null);
@@ -121,25 +121,31 @@ const Reports = () => {
       pdf.rect(0, headerH, W, 1.2, "F");
 
       const logoData = await loadLogo();
+      const LOGO_BOX = 12; // mm, contain box
+      let textX = M;
       if (logoData) {
-        try { pdf.addImage(logoData, "PNG", M, 6, 18, 18); } catch { /**/ }
+        const ratio = logoData.w / logoData.h;
+        const lw = ratio >= 1 ? LOGO_BOX : LOGO_BOX * ratio;
+        const lh = ratio >= 1 ? LOGO_BOX / ratio : LOGO_BOX;
+        const lx = M + (LOGO_BOX - lw) / 2;
+        const ly = (headerH - lh) / 2;
+        try { pdf.addImage(logoData.data, "PNG", lx, ly, lw, lh); } catch { /**/ }
+        textX = M + LOGO_BOX + 4; // 4mm gap ~ 10px
       }
 
-      // Title block left-aligned next to logo
+      // Title block, vertically centered next to logo
       pdf.setTextColor(...COLORS.white);
       pdf.setFont("helvetica", "bold");
-      pdf.setFontSize(16);
-      pdf.text("Bilan Financier", M + 22, 13);
+      pdf.setFontSize(15);
+      pdf.text("MonDjai  •  Bilan Financier", textX, headerH / 2 - 1);
       pdf.setFont("helvetica", "normal");
       pdf.setFontSize(9);
-      pdf.text(
-        `${format(new Date(startDate), "dd MMM yyyy", { locale: fr })} → ${format(new Date(endDate), "dd MMM yyyy", { locale: fr })}`,
-        M + 22, 19
-      );
+      const dateRange = `${format(new Date(startDate), "dd MMM yyyy", { locale: fr })} au ${format(new Date(endDate), "dd MMM yyyy", { locale: fr })}`;
+      pdf.text(dateRange, textX, headerH / 2 + 4);
       if (profile?.username) {
-        pdf.setFontSize(8.5);
-        pdf.setTextColor(220, 245, 235);
-        pdf.text(profile.username, M + 22, 24.5);
+        pdf.setFontSize(8);
+        pdf.setTextColor(210, 240, 228);
+        pdf.text(profile.username, W - M, headerH / 2 + 4, { align: "right" });
       }
 
       y = headerH + 10;
@@ -429,7 +435,7 @@ const Reports = () => {
         pdf.setLineWidth(0.2);
         pdf.line(M, H - 12, W - M, H - 12);
         if (logoData) {
-          try { pdf.addImage(logoData, "PNG", M, H - 9, 5, 5); } catch { /**/ }
+          try { pdf.addImage(logoData.data, "PNG", M, H - 9, 5, 5); } catch { /**/ }
         }
         pdf.setFontSize(7); pdf.setTextColor(...COLORS.muted); pdf.setFont("helvetica", "normal");
         pdf.text(`MonDjai • ${format(new Date(), "dd MMM yyyy 'à' HH:mm", { locale: fr })}`, M + 7, H - 5.5);
