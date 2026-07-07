@@ -50,7 +50,14 @@ const Reports = () => {
     return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
   };
 
-  const fmt = (n: number) => `${Math.round(n).toLocaleString("fr-FR")} ${currency}`;
+  // Manual thousands separator — jsPDF's helvetica can't render narrow no-break space
+  // produced by toLocaleString("fr-FR") (renders as "/" or garbage). Use plain space.
+  const formatNumber = (n: number) => {
+    const rounded = Math.round(n);
+    const abs = Math.abs(rounded).toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+    return rounded < 0 ? `-${abs}` : abs;
+  };
+  const fmt = (n: number) => `${formatNumber(n)} ${currency}`;
 
   const loadLogo = (): Promise<string | null> =>
     new Promise((resolve) => {
