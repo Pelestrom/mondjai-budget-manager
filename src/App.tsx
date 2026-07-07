@@ -22,6 +22,8 @@ import Settings from "./pages/Settings";
 import Help from "./pages/Help";
 import ManageTransactions from "./pages/ManageTransactions";
 import Reports from "./pages/Reports";
+import Terms from "./pages/legal/Terms";
+import Privacy from "./pages/legal/Privacy";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,6 +32,8 @@ const AppContent = () => (
   <Routes>
     <Route path="/login" element={<Login />} />
     <Route path="/register" element={<Register />} />
+    <Route path="/legal/terms" element={<Terms />} />
+    <Route path="/legal/privacy" element={<Privacy />} />
     <Route path="/" element={<ProtectedRoute><TopBar /><Dashboard /><BottomTabBar /></ProtectedRoute>} />
     <Route path="/notifications" element={<ProtectedRoute><TopBar /><Notifications /></ProtectedRoute>} />
     <Route path="/categories" element={<ProtectedRoute><TopBar /><Categories /></ProtectedRoute>} />
