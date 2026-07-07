@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Lock, Settings as SettingsIcon, LogOut, Search, ArrowLeft } from "lucide-react";
+import { Lock, Settings as SettingsIcon, LogOut, Search, ArrowLeft, Shield } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -264,6 +264,32 @@ const Settings = () => {
                 onCheckedChange={() => toggleSetting('notifications_enabled')}
               />
             </div>
+          </Card>
+        </motion.div>
+
+        {/* Legal */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+        >
+          <Card className="p-2 card-gradient">
+            <Button
+              variant="ghost"
+              className="w-full justify-start h-12"
+              onClick={() => window.open("/legal/privacy", "_blank", "noopener,noreferrer")}
+            >
+              <Shield className="w-4 h-4 mr-3 text-primary" />
+              <span className="flex-1 text-left">Confidentialité & Conditions</span>
+            </Button>
+            <Button
+              variant="ghost"
+              className="w-full justify-start h-12"
+              onClick={() => window.open("/legal/terms", "_blank", "noopener,noreferrer")}
+            >
+              <Shield className="w-4 h-4 mr-3 text-primary opacity-70" />
+              <span className="flex-1 text-left">Conditions d'Utilisation</span>
+            </Button>
           </Card>
         </motion.div>
 
