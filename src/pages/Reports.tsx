@@ -435,7 +435,7 @@ const Reports = () => {
         pdf.setLineWidth(0.2);
         pdf.line(M, H - 12, W - M, H - 12);
         if (logoData) {
-          try { pdf.addImage(logoData, "PNG", M, H - 9, 5, 5); } catch { /**/ }
+          try { pdf.addImage(logoData.data, "PNG", M, H - 9, 5, 5); } catch { /**/ }
         }
         pdf.setFontSize(7); pdf.setTextColor(...COLORS.muted); pdf.setFont("helvetica", "normal");
         pdf.text(`MonDjai • ${format(new Date(), "dd MMM yyyy 'à' HH:mm", { locale: fr })}`, M + 7, H - 5.5);
