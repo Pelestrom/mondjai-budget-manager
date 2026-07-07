@@ -141,14 +141,29 @@ const Register = () => {
               </Select>
             </div>
 
+            <div className="flex items-start gap-3 pt-1">
+              <Checkbox id="consent" checked={consent} onCheckedChange={(v) => setConsent(v === true)} className="mt-0.5" />
+              <label htmlFor="consent" className="text-xs text-muted-foreground leading-relaxed cursor-pointer">
+                J'accepte les{" "}
+                <Link to="/legal/terms" target="_blank" rel="noopener noreferrer" className="text-primary underline font-medium">
+                  Conditions d'Utilisation
+                </Link>{" "}
+                et la{" "}
+                <Link to="/legal/privacy" target="_blank" rel="noopener noreferrer" className="text-primary underline font-medium">
+                  Politique de Confidentialité
+                </Link>
+                .
+              </label>
+            </div>
+
             <motion.div whileTap={{ scale: 0.98 }}>
-              <Button onClick={handleRegister} disabled={isLoading || !isPasswordValid(password)} className="w-full btn-primary h-12 text-base">
+              <Button onClick={handleRegister} disabled={isLoading || !isPasswordValid(password) || !consent} className="w-full btn-primary h-12 text-base">
                 {isLoading ? "Création..." : "S'inscrire"}
               </Button>
             </motion.div>
 
             <AuthDivider />
-            <GoogleButton label="S'inscrire avec Google" />
+            <GoogleButton label="S'inscrire avec Google" disabled={!consent} />
           </div>
 
           <div className="text-center pt-2">
