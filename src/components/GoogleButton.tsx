@@ -12,9 +12,13 @@ const GoogleIcon = () => (
   </svg>
 );
 
-export const GoogleButton = ({ label = "Continuer avec Google" }: { label?: string }) => {
+export const GoogleButton = ({ label = "Continuer avec Google", disabled = false }: { label?: string; disabled?: boolean }) => {
   const [loading, setLoading] = useState(false);
   const handleClick = async () => {
+    if (disabled) {
+      toast.error("Vous devez accepter les Conditions d'Utilisation et la Politique de Confidentialité");
+      return;
+    }
     setLoading(true);
     try {
       const result = await lovable.auth.signInWithOAuth("google", {
@@ -35,8 +39,8 @@ export const GoogleButton = ({ label = "Continuer avec Google" }: { label?: stri
       type="button"
       whileTap={{ scale: 0.98 }}
       onClick={handleClick}
-      disabled={loading}
-      className="w-full h-12 rounded-full flex items-center justify-center gap-3 bg-white text-foreground border border-border font-semibold shadow-sm hover:shadow-md transition disabled:opacity-60"
+      disabled={loading || disabled}
+      className="w-full h-12 rounded-full flex items-center justify-center gap-3 bg-white text-foreground border border-border font-semibold shadow-sm hover:shadow-md transition disabled:opacity-60 disabled:cursor-not-allowed"
     >
       <GoogleIcon />
       <span className="text-sm">{loading ? "Connexion..." : label}</span>

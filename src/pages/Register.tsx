@@ -11,6 +11,8 @@ import mondjaiLogo from "@/assets/mondjai-logo.png";
 import { getAllDisplayCurrencies } from "@/lib/currencies";
 import { AuroraBackground } from "@/components/AuroraBackground";
 import { PasswordStrength, isPasswordValid } from "@/components/PasswordStrength";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Link } from "react-router-dom";
 import { GoogleButton, AuthDivider } from "@/components/GoogleButton";
 
 const Register = () => {
@@ -25,16 +27,21 @@ const Register = () => {
   const [isSelectOpen, setIsSelectOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [pwdError, setPwdError] = useState("");
+  const [consent, setConsent] = useState(false);
 
   const handleRegister = async () => {
     if (!username || !email || !password) return toast.error("Veuillez remplir tous les champs");
+    if (!consent) return toast.error("Vous devez accepter les Conditions d'Utilisation et la Politique de Confidentialité");
     if (!isPasswordValid(password)) {
       setPwdError("Le mot de passe ne respecte pas toutes les règles de sécurité.");
       return;
     }
     setPwdError("");
     setIsLoading(true);
-    const { error } = await signUp(email, password, { username, is_student: false, currency });
+    const { error } = await signUp(email, password, {
+      username, is_student: false, currency,
+      terms_accepted: true, privacy_accepted: true,
+    });
     setIsLoading(false);
     if (error) {
       toast.error(error.message.includes("already registered") ? "Cet email est déjà utilisé" : error.message);
@@ -134,14 +141,29 @@ const Register = () => {
               </Select>
             </div>
 
+            <div className="flex items-start gap-3 pt-1">
+              <Checkbox id="consent" checked={consent} onCheckedChange={(v) => setConsent(v === true)} className="mt-0.5" />
+              <label htmlFor="consent" className="text-xs text-muted-foreground leading-relaxed cursor-pointer">
+                J'accepte les{" "}
+                <Link to="/legal/terms" target="_blank" rel="noopener noreferrer" className="text-primary underline font-medium">
+                  Conditions d'Utilisation
+                </Link>{" "}
+                et la{" "}
+                <Link to="/legal/privacy" target="_blank" rel="noopener noreferrer" className="text-primary underline font-medium">
+                  Politique de Confidentialité
+                </Link>
+                .
+              </label>
+            </div>
+
             <motion.div whileTap={{ scale: 0.98 }}>
-              <Button onClick={handleRegister} disabled={isLoading || !isPasswordValid(password)} className="w-full btn-primary h-12 text-base">
+              <Button onClick={handleRegister} disabled={isLoading || !isPasswordValid(password) || !consent} className="w-full btn-primary h-12 text-base">
                 {isLoading ? "Création..." : "S'inscrire"}
               </Button>
             </motion.div>
 
             <AuthDivider />
-            <GoogleButton label="S'inscrire avec Google" />
+            <GoogleButton label="S'inscrire avec Google" disabled={!consent} />
           </div>
 
           <div className="text-center pt-2">

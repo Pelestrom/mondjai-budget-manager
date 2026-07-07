@@ -164,6 +164,8 @@ export type Database = {
           currency: string | null
           id: string
           is_student: boolean | null
+          privacy_accepted_at: string | null
+          terms_accepted_at: string | null
           updated_at: string | null
           user_id: string
           username: string
@@ -174,6 +176,8 @@ export type Database = {
           currency?: string | null
           id?: string
           is_student?: boolean | null
+          privacy_accepted_at?: string | null
+          terms_accepted_at?: string | null
           updated_at?: string | null
           user_id: string
           username: string
@@ -184,6 +188,8 @@ export type Database = {
           currency?: string | null
           id?: string
           is_student?: boolean | null
+          privacy_accepted_at?: string | null
+          terms_accepted_at?: string | null
           updated_at?: string | null
           user_id?: string
           username?: string
