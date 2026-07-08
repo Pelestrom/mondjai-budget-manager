@@ -92,6 +92,7 @@ const Login = () => {
             <AuthDivider />
             <GoogleButton />
           </div>
+          <ForgotPasswordDialog open={forgotOpen} onOpenChange={setForgotOpen} />
 
           <div className="text-center pt-2">
             <button onClick={() => navigate("/register")} className="text-sm text-primary hover:underline font-medium">
