@@ -10,6 +10,7 @@ import { Lock, Mail, Eye, EyeOff } from "lucide-react";
 import mondjaiLogo from "@/assets/mondjai-logo.png";
 import { AuroraBackground } from "@/components/AuroraBackground";
 import { GoogleButton, AuthDivider } from "@/components/GoogleButton";
+import { ForgotPasswordDialog } from "@/components/ForgotPasswordDialog";
 
 const REMEMBER_KEY = "mondjai-remember-me";
 
