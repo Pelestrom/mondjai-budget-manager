@@ -113,42 +113,53 @@ const Reports = () => {
       let y = 0;
 
       // ================= HEADER =================
-      const headerH = 30;
+      const headerH = 34;
       pdf.setFillColor(...COLORS.primaryDeep);
       pdf.rect(0, 0, W, headerH, "F");
-      // slim accent bar bottom
       pdf.setFillColor(...COLORS.primary);
       pdf.rect(0, headerH, W, 1.2, "F");
 
       const logoData = await loadLogo();
-      const LOGO_BOX = 12; // mm, contain box
-      let textX = M;
+      // White pill badge with logo centered
+      const BADGE_D = 20; // mm (~56px)
+      const badgeCx = M + BADGE_D / 2;
+      const badgeCy = headerH / 2;
+      try {
+        const GState = (pdf as any).GState;
+        if (GState) {
+          (pdf as any).setGState(new GState({ opacity: 0.18 }));
+          pdf.setFillColor(0, 0, 0);
+          pdf.circle(badgeCx, badgeCy + 0.6, BADGE_D / 2, "F");
+          (pdf as any).setGState(new GState({ opacity: 1 }));
+        }
+      } catch { /**/ }
+      pdf.setFillColor(255, 255, 255);
+      pdf.circle(badgeCx, badgeCy, BADGE_D / 2, "F");
+
       if (logoData) {
+        const inner = BADGE_D - 6;
         const ratio = logoData.w / logoData.h;
-        const lw = ratio >= 1 ? LOGO_BOX : LOGO_BOX * ratio;
-        const lh = ratio >= 1 ? LOGO_BOX / ratio : LOGO_BOX;
-        const lx = M + (LOGO_BOX - lw) / 2;
-        const ly = (headerH - lh) / 2;
-        try { pdf.addImage(logoData.data, "PNG", lx, ly, lw, lh); } catch { /**/ }
-        textX = M + LOGO_BOX + 4; // 4mm gap ~ 10px
+        const lw = ratio >= 1 ? inner : inner * ratio;
+        const lh = ratio >= 1 ? inner / ratio : inner;
+        pdf.addImage(logoData.data, "PNG", badgeCx - lw / 2, badgeCy - lh / 2, lw, lh);
       }
 
-      // Title block, vertically centered next to logo
+      const textX = M + BADGE_D + 6;
       pdf.setTextColor(...COLORS.white);
       pdf.setFont("helvetica", "bold");
-      pdf.setFontSize(15);
-      pdf.text("MonDjai  •  Bilan Financier", textX, headerH / 2 - 1);
+      pdf.setFontSize(16);
+      pdf.text("Bilan Financier", textX, headerH / 2 - 1);
       pdf.setFont("helvetica", "normal");
       pdf.setFontSize(9);
       const dateRange = `${format(new Date(startDate), "dd MMM yyyy", { locale: fr })} au ${format(new Date(endDate), "dd MMM yyyy", { locale: fr })}`;
-      pdf.text(dateRange, textX, headerH / 2 + 4);
+      pdf.text(dateRange, textX, headerH / 2 + 4.5);
       if (profile?.username) {
         pdf.setFontSize(8);
         pdf.setTextColor(210, 240, 228);
-        pdf.text(profile.username, W - M, headerH / 2 + 4, { align: "right" });
+        pdf.text(profile.username, W - M, headerH / 2 + 4.5, { align: "right" });
       }
 
-      y = headerH + 10;
+      y = headerH + 12;
 
       // ================= SUMMARY CARDS =================
       pdf.setTextColor(...COLORS.dark);
