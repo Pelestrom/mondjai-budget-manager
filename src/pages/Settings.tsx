@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Lock, Settings as SettingsIcon, LogOut, Search, ArrowLeft, Shield } from "lucide-react";
+import { Lock, Settings as SettingsIcon, LogOut, Search, ArrowLeft, Shield, Pencil, Check, X } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageHero } from "@/components/PageHero";
+import { ChangePasswordDialog } from "@/components/ChangePasswordDialog";
 
 const Settings = () => {
   const navigate = useNavigate();
