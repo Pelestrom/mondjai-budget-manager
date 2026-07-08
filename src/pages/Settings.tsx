@@ -101,19 +101,55 @@ const Settings = () => {
           transition={{ delay: 0.1 }}
         >
           <Card className="p-6 card-gradient">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-                  <span className="text-2xl font-bold text-white">
-                    {profile?.username?.charAt(0).toUpperCase()}
-                  </span>
-                </div>
-                <div>
-                  <h3 className="font-semibold text-foreground">{profile?.username}</h3>
-                  <p className="text-sm text-muted-foreground">
-                    {profile?.is_student ? "Étudiant" : "Non-étudiant"}
-                  </p>
-                </div>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center shrink-0">
+                <span className="text-2xl font-bold text-white">
+                  {profile?.username?.charAt(0).toUpperCase()}
+                </span>
+              </div>
+              <div className="flex-1 min-w-0">
+                {isEditingName ? (
+                  <div className="flex items-center gap-2">
+                    <Input
+                      value={nameDraft}
+                      onChange={(e) => setNameDraft(e.target.value)}
+                      maxLength={30}
+                      autoFocus
+                      className="h-9"
+                    />
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-8 w-8 text-primary"
+                      onClick={async () => {
+                        const t = nameDraft.trim();
+                        if (t.length < 2 || t.length > 30 || !/^[\p{L}0-9 _.'-]+$/u.test(t)) {
+                          return toast.error("Nom invalide (2-30 caractères)");
+                        }
+                        await updateProfile({ username: t });
+                        setIsEditingName(false);
+                        toast.success("Nom mis à jour");
+                      }}
+                    >
+                      <Check className="w-4 h-4" />
+                    </Button>
+                    <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => setIsEditingName(false)}>
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-semibold text-foreground truncate">{profile?.username}</h3>
+                    <button
+                      type="button"
+                      onClick={() => { setNameDraft(profile?.username || ""); setIsEditingName(true); }}
+                      className="text-muted-foreground hover:text-primary transition-colors"
+                      aria-label="Modifier le nom"
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
 
