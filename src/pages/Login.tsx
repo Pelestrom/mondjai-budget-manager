@@ -69,6 +69,11 @@ const Login = () => {
                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
+              <div className="flex justify-end">
+                <button type="button" onClick={() => setForgotOpen(true)} className="text-xs font-medium text-primary hover:underline">
+                  Mot de passe oublié ?
+                </button>
+              </div>
             </div>
 
             <div className="flex items-center justify-between pt-1">
