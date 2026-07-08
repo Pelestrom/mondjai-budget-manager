@@ -10,6 +10,7 @@ import { Lock, Mail, Eye, EyeOff } from "lucide-react";
 import mondjaiLogo from "@/assets/mondjai-logo.png";
 import { AuroraBackground } from "@/components/AuroraBackground";
 import { GoogleButton, AuthDivider } from "@/components/GoogleButton";
+import { ForgotPasswordDialog } from "@/components/ForgotPasswordDialog";
 
 const REMEMBER_KEY = "mondjai-remember-me";
 
@@ -21,6 +22,7 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(() => localStorage.getItem(REMEMBER_KEY) === "1");
   const [isLoading, setIsLoading] = useState(false);
+  const [forgotOpen, setForgotOpen] = useState(false);
 
   useEffect(() => { if (user) navigate("/"); }, [user, navigate]);
 
@@ -67,6 +69,11 @@ const Login = () => {
                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
+              <div className="flex justify-end">
+                <button type="button" onClick={() => setForgotOpen(true)} className="text-xs font-medium text-primary hover:underline">
+                  Mot de passe oublié ?
+                </button>
+              </div>
             </div>
 
             <div className="flex items-center justify-between pt-1">
@@ -85,6 +92,7 @@ const Login = () => {
             <AuthDivider />
             <GoogleButton />
           </div>
+          <ForgotPasswordDialog open={forgotOpen} onOpenChange={setForgotOpen} />
 
           <div className="text-center pt-2">
             <button onClick={() => navigate("/register")} className="text-sm text-primary hover:underline font-medium">
