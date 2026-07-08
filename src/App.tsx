@@ -24,6 +24,8 @@ import ManageTransactions from "./pages/ManageTransactions";
 import Reports from "./pages/Reports";
 import Terms from "./pages/legal/Terms";
 import Privacy from "./pages/legal/Privacy";
+import ResetPassword from "./pages/ResetPassword";
+import { CompleteProfileDialog } from "@/components/CompleteProfileDialog";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
