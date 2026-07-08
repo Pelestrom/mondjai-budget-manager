@@ -24,6 +24,9 @@ const Settings = () => {
   const [isCurrencyOpen, setIsCurrencyOpen] = useState(false);
   const [currencySearch, setCurrencySearch] = useState("");
   const [selectedCurrency, setSelectedCurrency] = useState(profile?.currency || "XOF");
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [nameDraft, setNameDraft] = useState("");
+  const [isPwdOpen, setIsPwdOpen] = useState(false);
 
   const currentCurrency = currencies.find(c => c.symbol === profile?.currency || c.code === profile?.currency);
 
