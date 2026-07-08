@@ -445,18 +445,31 @@ const Reports = () => {
         pdf.setDrawColor(...COLORS.border);
         pdf.setLineWidth(0.2);
         pdf.line(M, H - 12, W - M, H - 12);
-        const footerLogoH = 5; // ~18px, aspect preserved
+
+        // Vertically center logo and text on a shared baseline
+        const footerCy = H - 6;          // shared vertical center
+        const footerLogoH = 4.5;         // ~16-18px
+        const textFontSize = 8;          // ~11px
+        pdf.setFontSize(textFontSize);
+        pdf.setFont("helvetica", "normal");
+        pdf.setTextColor(...COLORS.muted);
+
         let footerTextX = M;
         if (logoData) {
           const ratio = logoData.w / logoData.h;
           const lw = footerLogoH * ratio;
-          const ly = H - 8.2;
+          const ly = footerCy - footerLogoH / 2;
           try { pdf.addImage(logoData.data, "PNG", M, ly, lw, footerLogoH); } catch { /**/ }
-          footerTextX = M + lw + 2.2; // ~6-8px gap
+          footerTextX = M + lw + 2.5; // ~7px gap
         }
-        pdf.setFontSize(7); pdf.setTextColor(...COLORS.muted); pdf.setFont("helvetica", "normal");
-        pdf.text(`• ${format(new Date(), "dd MMM yyyy 'à' HH:mm", { locale: fr })}`, footerTextX, H - 5.5);
-        pdf.text(`Page ${p} / ${total}`, W - M, H - 5.5, { align: "right" });
+        // Text baseline aligned to visual center of logo (cap-height offset ~0.9mm at 8pt)
+        const textBaselineY = footerCy + 0.9;
+        pdf.text(
+          `• ${format(new Date(), "dd MMM yyyy 'à' HH:mm", { locale: fr })}`,
+          footerTextX,
+          textBaselineY,
+        );
+        pdf.text(`Page ${p} / ${total}`, W - M, textBaselineY, { align: "right" });
       }
 
       const fileName = `bilan_mondjai_${format(new Date(startDate), "yyyy-MM-dd")}_${format(new Date(endDate), "yyyy-MM-dd")}.pdf`;
