@@ -36,7 +36,8 @@ const AppContent = () => (
     <Route path="/register" element={<Register />} />
     <Route path="/legal/terms" element={<Terms />} />
     <Route path="/legal/privacy" element={<Privacy />} />
-    <Route path="/" element={<ProtectedRoute><TopBar /><Dashboard /><BottomTabBar /></ProtectedRoute>} />
+    <Route path="/reset-password" element={<ResetPassword />} />
+    <Route path="/" element={<ProtectedRoute><TopBar /><Dashboard /><BottomTabBar /><CompleteProfileDialog /></ProtectedRoute>} />
     <Route path="/notifications" element={<ProtectedRoute><TopBar /><Notifications /></ProtectedRoute>} />
     <Route path="/categories" element={<ProtectedRoute><TopBar /><Categories /></ProtectedRoute>} />
     <Route path="/budgets" element={<ProtectedRoute><TopBar /><Budgets /><BottomTabBar /></ProtectedRoute>} />
