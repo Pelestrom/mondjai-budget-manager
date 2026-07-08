@@ -234,10 +234,12 @@ const Settings = () => {
             </div>
           </Card>
           <Card className="p-4 card-gradient">
-            <Button variant="ghost" className="w-full justify-start">
+            <Button variant="ghost" className="w-full justify-start" onClick={() => setIsPwdOpen(true)}>
+              <Lock className="w-4 h-4 mr-3 text-primary" />
               Changer le mot de passe
             </Button>
           </Card>
+          <ChangePasswordDialog open={isPwdOpen} onOpenChange={setIsPwdOpen} />
         </motion.div>
 
         {/* Options */}
