@@ -445,11 +445,17 @@ const Reports = () => {
         pdf.setDrawColor(...COLORS.border);
         pdf.setLineWidth(0.2);
         pdf.line(M, H - 12, W - M, H - 12);
+        const footerLogoH = 5; // ~18px, aspect preserved
+        let footerTextX = M;
         if (logoData) {
-          try { pdf.addImage(logoData.data, "PNG", M, H - 9, 5, 5); } catch { /**/ }
+          const ratio = logoData.w / logoData.h;
+          const lw = footerLogoH * ratio;
+          const ly = H - 8.2;
+          try { pdf.addImage(logoData.data, "PNG", M, ly, lw, footerLogoH); } catch { /**/ }
+          footerTextX = M + lw + 2.2; // ~6-8px gap
         }
         pdf.setFontSize(7); pdf.setTextColor(...COLORS.muted); pdf.setFont("helvetica", "normal");
-        pdf.text(`MonDjai • ${format(new Date(), "dd MMM yyyy 'à' HH:mm", { locale: fr })}`, M + 7, H - 5.5);
+        pdf.text(`• ${format(new Date(), "dd MMM yyyy 'à' HH:mm", { locale: fr })}`, footerTextX, H - 5.5);
         pdf.text(`Page ${p} / ${total}`, W - M, H - 5.5, { align: "right" });
       }
 
