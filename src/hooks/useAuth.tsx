@@ -58,8 +58,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       // "Remember me" enforcement: if user did NOT tick remember-me on last login,
       // don't auto-restore session on cold app start.
+      // EXCEPTION: password recovery flow — never sign out on /reset-password,
+      // otherwise the recovery session is wiped before the user can update the password.
       const remember = localStorage.getItem("mondjai-remember-me") === "1";
-      if (session && !remember) {
+      const isRecovery =
+        window.location.pathname.startsWith("/reset-password") ||
+        window.location.hash.includes("type=recovery");
+      if (session && !remember && !isRecovery) {
         await supabase.auth.signOut();
         setSession(null);
         setUser(null);
