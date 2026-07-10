@@ -17,14 +17,46 @@ const ResetPassword = () => {
   const [show, setShow] = useState(false);
   const [loading, setLoading] = useState(false);
   const [ready, setReady] = useState(false);
+  const [linkError, setLinkError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Wait for Supabase to process the recovery link and set the session
+    let cancelled = false;
+
     const { data: sub } = supabase.auth.onAuthStateChange((event) => {
-      if (event === "PASSWORD_RECOVERY" || event === "SIGNED_IN") setReady(true);
+      if (event === "PASSWORD_RECOVERY" || event === "SIGNED_IN") {
+        setReady(true);
+        setLinkError(null);
+      }
     });
-    supabase.auth.getSession().then(({ data }) => { if (data.session) setReady(true); });
-    return () => sub.subscription.unsubscribe();
+
+    (async () => {
+      // PKCE flow: exchange ?code= for a session
+      const url = new URL(window.location.href);
+      const code = url.searchParams.get("code");
+      if (code) {
+        const { error } = await supabase.auth.exchangeCodeForSession(code);
+        if (!cancelled && error) {
+          setLinkError("Ce lien de réinitialisation est invalide ou a expiré. Demande un nouveau lien.");
+          return;
+        }
+      }
+
+      const { data } = await supabase.auth.getSession();
+      if (cancelled) return;
+      if (data.session) {
+        setReady(true);
+      } else {
+        // Give Supabase a moment to process the URL hash / event
+        setTimeout(async () => {
+          if (cancelled) return;
+          const { data: retry } = await supabase.auth.getSession();
+          if (retry.session) setReady(true);
+          else setLinkError("Ce lien de réinitialisation est invalide ou a expiré. Demande un nouveau lien.");
+        }, 4000);
+      }
+    })();
+
+    return () => { cancelled = true; sub.subscription.unsubscribe(); };
   }, []);
 
   const handleSubmit = async () => {
@@ -33,7 +65,12 @@ const ResetPassword = () => {
     setLoading(true);
     const { error } = await supabase.auth.updateUser({ password });
     setLoading(false);
-    if (error) return toast.error(error.message);
+    if (error) {
+      if (/session/i.test(error.message)) {
+        return toast.error("Le lien de réinitialisation a expiré. Merci de refaire une demande.");
+      }
+      return toast.error("Une erreur est survenue. Réessaie ou demande un nouveau lien.");
+    }
     await supabase.auth.signOut();
     toast.success("Mot de passe réinitialisé. Connecte-toi avec le nouveau.");
     navigate("/login");
@@ -50,7 +87,14 @@ const ResetPassword = () => {
             <p className="text-sm text-muted-foreground">Choisis un mot de passe sécurisé</p>
           </div>
 
-          {!ready ? (
+          {linkError ? (
+            <div className="space-y-4 text-center">
+              <p className="text-sm text-destructive">{linkError}</p>
+              <Button onClick={() => navigate("/login")} className="w-full btn-primary h-12">
+                Retour à la connexion
+              </Button>
+            </div>
+          ) : !ready ? (
             <p className="text-sm text-center text-muted-foreground">Vérification du lien...</p>
           ) : (
             <div className="space-y-4">
