@@ -22,6 +22,11 @@ const ResetPassword = () => {
   useEffect(() => {
     let cancelled = false;
 
+    const expiredMessage = "Ce lien de réinitialisation est invalide ou a expiré. Demande un nouveau lien.";
+    const cleanRecoveryUrl = () => {
+      window.history.replaceState(window.history.state, "", `${window.location.origin}${window.location.pathname}`);
+    };
+
     const { data: sub } = supabase.auth.onAuthStateChange((event) => {
       if (event === "PASSWORD_RECOVERY" || event === "SIGNED_IN") {
         setReady(true);
@@ -30,15 +35,56 @@ const ResetPassword = () => {
     });
 
     (async () => {
-      // PKCE flow: exchange ?code= for a session
       const url = new URL(window.location.href);
-      const code = url.searchParams.get("code");
-      if (code) {
-        const { error } = await supabase.auth.exchangeCodeForSession(code);
-        if (!cancelled && error) {
-          setLinkError("Ce lien de réinitialisation est invalide ou a expiré. Demande un nouveau lien.");
+      const hashParams = new URLSearchParams(url.hash.replace(/^#/, ""));
+      const accessToken = hashParams.get("access_token");
+      const refreshToken = hashParams.get("refresh_token");
+      const recoveryType = hashParams.get("type");
+
+      // Implicit recovery links: #access_token=...&refresh_token=...&type=recovery
+      if (accessToken && refreshToken && (!recoveryType || recoveryType === "recovery")) {
+        const { data, error } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken,
+        });
+        if (cancelled) return;
+        if (error || !data.session) {
+          setLinkError(expiredMessage);
           return;
         }
+        cleanRecoveryUrl();
+        setReady(true);
+        setLinkError(null);
+        return;
+      }
+
+      // PKCE recovery links generated before this fix: ?code=...
+      const code = url.searchParams.get("code");
+      if (code) {
+        const { data: current } = await supabase.auth.getSession();
+        if (cancelled) return;
+        if (current.session) {
+          cleanRecoveryUrl();
+          setReady(true);
+          return;
+        }
+
+        const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+        if (cancelled) return;
+        if (error || !data.session) {
+          const { data: retry } = await supabase.auth.getSession();
+          if (retry.session) {
+            cleanRecoveryUrl();
+            setReady(true);
+            return;
+          }
+          setLinkError(expiredMessage);
+          return;
+        }
+        cleanRecoveryUrl();
+        setReady(true);
+        setLinkError(null);
+        return;
       }
 
       const { data } = await supabase.auth.getSession();
@@ -46,13 +92,7 @@ const ResetPassword = () => {
       if (data.session) {
         setReady(true);
       } else {
-        // Give Supabase a moment to process the URL hash / event
-        setTimeout(async () => {
-          if (cancelled) return;
-          const { data: retry } = await supabase.auth.getSession();
-          if (retry.session) setReady(true);
-          else setLinkError("Ce lien de réinitialisation est invalide ou a expiré. Demande un nouveau lien.");
-        }, 4000);
+        setLinkError(expiredMessage);
       }
     })();
 
@@ -90,8 +130,8 @@ const ResetPassword = () => {
           {linkError ? (
             <div className="space-y-4 text-center">
               <p className="text-sm text-destructive">{linkError}</p>
-              <Button onClick={() => navigate("/login")} className="w-full btn-primary h-12">
-                Retour à la connexion
+              <Button onClick={() => navigate("/login?forgot=1")} className="w-full btn-primary h-12">
+                Demander un nouveau lien
               </Button>
             </div>
           ) : !ready ? (

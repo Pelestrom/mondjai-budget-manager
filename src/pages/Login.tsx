@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -16,6 +16,7 @@ const REMEMBER_KEY = "mondjai-remember-me";
 
 const Login = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { signIn, user } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -25,6 +26,12 @@ const Login = () => {
   const [forgotOpen, setForgotOpen] = useState(false);
 
   useEffect(() => { if (user) navigate("/"); }, [user, navigate]);
+
+  useEffect(() => {
+    if (new URLSearchParams(location.search).get("forgot") === "1") {
+      setForgotOpen(true);
+    }
+  }, [location.search]);
 
   const handleLogin = async () => {
     if (!email || !password) return toast.error("Veuillez remplir tous les champs");

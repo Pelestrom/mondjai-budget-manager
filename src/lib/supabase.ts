@@ -26,12 +26,28 @@ const supabaseAnonKey =
   env.SUPABASE_ANON_KEY ||
   FALLBACK_ANON_KEY;
 
+const shouldDetectSessionInUrl = (url: URL) => {
+  // /reset-password handles recovery links manually to avoid racing with the
+  // automatic URL exchange and falsely marking fresh links as expired.
+  return !url.pathname.startsWith("/reset-password");
+};
+
 export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
   auth: {
     storage: localStorage,
     persistSession: true,
     autoRefreshToken: true,
-    detectSessionInUrl: true,
+    detectSessionInUrl: shouldDetectSessionInUrl,
     flowType: "pkce",
+  },
+});
+
+export const passwordResetClient = createClient<Database>(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    storage: localStorage,
+    persistSession: false,
+    autoRefreshToken: false,
+    detectSessionInUrl: false,
+    flowType: "implicit",
   },
 });
