@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Mail } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+import { passwordResetClient } from "@/lib/supabase";
 import { toast } from "sonner";
 
 export const ForgotPasswordDialog = ({
@@ -20,10 +20,14 @@ export const ForgotPasswordDialog = ({
   const handleSend = async () => {
     if (!email) return toast.error("Veuillez saisir votre email");
     setLoading(true);
-    await supabase.auth.resetPasswordForEmail(email, {
+    const { error } = await passwordResetClient.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/reset-password`,
     });
     setLoading(false);
+    if (error) {
+      toast.error("Impossible d'envoyer le lien pour le moment. Réessaie dans quelques instants.");
+      return;
+    }
     setSent(true);
   };
 
